@@ -1,173 +1,343 @@
-<h1 align="center">
-  <br>
-  <a><img src="https://www.mdpi.com/logistics/logistics-03-00005/article_deploy/html/images/logistics-03-00005-g001.png" width="200"></a>
-  <br>  
-  Supply-Chain-Dapp
-  <br>
-</h1>
+# 🔗 Supply Chain Blockchain DApp
 
-<p align="center">
-  
-  <a href="https://docs.godechain.com/welcome/">
-    <img src="https://s3.coinmarketcap.com/static-gravity/thumbnail/medium/12b1f4d9727b4aab83cd5398bf6e080d.jpg" width="35" height='35'>
-  </a>
-  <a href="https://soliditylang.org/">
-    <img src="https://github.com/rishav4101/eth-supplychain-dapp/blob/main/images/Solidity.svg" width="80">       
-  </a>
-  <a href="https://reactjs.org/"><img src="https://github.com/rishav4101/eth-supplychain-dapp/blob/main/images/react.png" width="80"></a>
-  
-  <a href="https://www.trufflesuite.com/">
-    <img src="https://github.com/rishav4101/eth-supplychain-dapp/blob/main/images/trufflenew.png" width="50">
-  </a>
-   &nbsp;&nbsp;&nbsp;
-  <a href="https://www.npmjs.com/package/web3">
-    <img src="https://github.com/rishav4101/eth-supplychain-dapp/blob/main/images/web3.jpg" width="60">
-  </a>
-</p>
+<div align="center">
 
-<h4 align="center">A simple Supply Chain setup with <a href="https://docs.soliditylang.org/en/v0.8.4/" target="_blank">Solidity</a>.</h4>
+![Supply Chain Blockchain](https://www.mdpi.com/logistics/logistics-03-00005/article_deploy/html/images/logistics-03-00005-g001.png)
 
-<p align="center">
-  <a >
-    <img src="https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen.svg">
-       
-  </a>
-  
-</p>
+**A decentralized supply chain management system built on Ethereum blockchain using Solidity smart contracts, Next.js, and Web3.js**
 
-## Demo 
-https://www.canva.com/design/DAFb-i9v_cM/-fK0pKTuOkFq5dfCPQxh_w/watch?utm_content=DAFb-i9v_cM&utm_campaign=designshare&utm_medium=link&utm_source=publishsharelink
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Solidity](https://img.shields.io/badge/Solidity-363636?logo=solidity&logoColor=white)](https://soliditylang.org/)
+[![Hardhat](https://img.shields.io/badge/Hardhat-FFF1E2?logo=hardhat&logoColor=black)](https://hardhat.org/)
 
-## Description
-Supply chain is always hard to manage and requires a lot of admistrative machinery. However, when managed with smart contracts using blockchain, a lot of the paperwork is reduced.
-Also it leads to an increase in the transparency and helps to build an efficient Root of Trust. Supply-chain-dapp is such an implementation of a supply chain management system which uses blockchain to ensure a transparent and secure transfer of product from the manufacturer to the customer via the online e-commerce websites. 
-## Architecture
-The smart contract is being written with Solidity which is then compiled, migrated and deployed using Truffle.js on the Gode Testnet blockchain network.The frontend uses Web3.js to communicate with the smart contract and Gode Testnet blockchain network and Meta Musk Wallet is connect to Gode Test Network to do Transaction between each component in Supply .
-****
-![https://raw.githubusercontent.com/faizack619/Supply-Chain-Gode-Blockchain/master/client/public/Blank%20diagram.png](https://raw.githubusercontent.com/faizack619/Supply-Chain-Gode-Blockchain/master/client/public/Blank%20diagram.png)
+[⭐ Star](https://github.com/faizack619/Supply-Chain-Blockchain) • [🍴 Fork](https://github.com/faizack619/Supply-Chain-Blockchain/fork) • [🐛 Report Bug](https://github.com/faizack619/Supply-Chain-Blockchain/issues) • [💡 Request Feature](https://github.com/faizack619/Supply-Chain-Blockchain/issues)
 
-## Supply Chain Flow
+</div>
+
+---
 
 
-![[https://cdn.vectorstock.com/i/1000x1000/35/51/diagram-of-supply-chain-management-vector-41743551.webp](https://cdn.vectorstock.com/i/1000x1000/35/51/diagram-of-supply-chain-management-vector-41743551.webp)](https://cdn-wordpress-info.futurelearn.com/info/wp-content/uploads/8d54ad89-e86f-4d7c-8208-74455976a4a9-2-768x489.png)
+## 🎥 Demo
+
+Watch the demo video: [Canva Design Demo](https://www.canva.com/design/DAFb-i9v_cM/-fK0pKTuOkFq5dfCPQxh_w/watch?utm_content=DAFb-i9v_cM&utm_campaign=designshare&utm_medium=link&utm_source=publishsharelink)
+
+## 📋 Table of Contents
+
+- [Overview](#-overview)
+- [Features](#-features)
+- [Technology Stack](#-technology-stack)
+- [Architecture](#-architecture)
+- [Installation](#-installation)
+- [Running the Project](#-running-the-project)
+- [Usage Guide](#-usage-guide)
+- [Smart Contract Details](#-smart-contract-details)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+## 🎯 Overview
+
+**Supply Chain Blockchain DApp** is a comprehensive decentralized application that leverages blockchain technology to create a transparent, secure, and efficient supply chain management system. This project demonstrates how smart contracts can revolutionize traditional supply chain processes by eliminating paperwork, increasing transparency, and building a robust Root of Trust.
+
+### Key Benefits
+
+- ✅ **Transparency**: All transactions and product movements are recorded on the blockchain
+- ✅ **Security**: Immutable records prevent tampering and fraud
+- ✅ **Efficiency**: Automated processes reduce administrative overhead
+- ✅ **Traceability**: Complete product journey from raw materials to consumer
+- ✅ **Decentralization**: No single point of failure
+
+## ✨ Features
+
+- 🔐 **Role-Based Access Control**: Secure role assignment (Owner, Raw Material Supplier, Manufacturer, Distributor, Retailer)
+- 📦 **Product Management**: Add and track products through the entire supply chain
+- 🔄 **Supply Chain Flow**: Manage product stages (Order → Raw Material Supply → Manufacturing → Distribution → Retail → Sold)
+- 📊 **Real-Time Tracking**: Track products with detailed stage information and QR codes
+- 🎨 **Modern UI**: Beautiful, responsive interface built with Next.js and Tailwind CSS
+- 🔗 **Web3 Integration**: Seamless connection with MetaMask wallet
+- 📱 **Mobile Responsive**: Works perfectly on all devices
+
+## 🛠 Technology Stack
+
+### Frontend
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework
+- **Web3.js** - Ethereum blockchain interaction
+- **QRCode.react** - QR code generation for product tracking
+
+### Backend/Blockchain
+- **Solidity ^0.8.19** - Smart contract programming language
+- **Hardhat** - Ethereum development environment
+- **Ganache** - Personal blockchain for development
+- **MetaMask** - Web3 wallet integration
+
+### Development Tools
+- **Node.js 18+** - JavaScript runtime
+- **npm/yarn** - Package management
+- **Git** - Version control
+
+## 🏗 Architecture
+
+The application follows a decentralized architecture where:
+
+1. **Smart Contracts** (Solidity) handle all business logic and data storage on the blockchain
+2. **Frontend** (Next.js) provides the user interface and interacts with the blockchain via Web3.js
+3. **MetaMask** acts as the bridge between users and the Ethereum network
+4. **Ganache** provides a local blockchain for development and testing
+
+### System Flow
+
+```
+User → Next.js Frontend → Web3.js → MetaMask → Ethereum Network → Smart Contract
+```
+
+![Architecture Diagram](https://raw.githubusercontent.com/faizack619/Supply-Chain-Gode-Blockchain/master/client/public/Blank%20diagram.png)
+
+### Supply Chain Flow
+
+The product journey through the supply chain:
+
+```
+Order → Raw Material Supplier → Manufacturer → Distributor → Retailer → Consumer
+```
+
+![Supply Chain Flow](https://cdn-wordpress-info.futurelearn.com/info/wp-content/uploads/8d54ad89-e86f-4d7c-8208-74455976a4a9-2-768x489.png)
+
+## 📦 Installation
+
+### Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
+- **Git** - [Download](https://git-scm.com/downloads)
+- **Ganache** - [Download](https://trufflesuite.com/ganache/)
+- **MetaMask** - [Chrome Extension](https://chrome.google.com/webstore/detail/metamask) | [Firefox Add-on](https://addons.mozilla.org/en-US/firefox/addon/ether-metamask/)
+- **VS Code** (Recommended) - [Download](https://code.visualstudio.com/)
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/faizack619/Supply-Chain-Blockchain.git
+cd Supply-Chain-Blockchain
+```
+
+### Step 2: Install Dependencies
+
+Install root dependencies (for Hardhat):
+
+```bash
+npm install
+```
+
+Install client dependencies:
+
+```bash
+cd client
+npm install
+cd ..
+```
+
+### Step 3: Configure Ganache
+
+1. Open Ganache and create a new workspace
+2. Note the RPC Server URL (usually `http://127.0.0.1:7545` or `http://127.0.0.1:8545`)
+3. Copy the Chain ID (usually `1337` or `5777`)
+
+### Step 4: Configure Hardhat
+
+Update `hardhat.config.ts` with your Ganache network settings:
+
+```typescript
+networks: {
+  ganache: {
+    url: "http://127.0.0.1:7545", // Your Ganache RPC URL
+    chainId: 1337, // Your Ganache Chain ID
+    accounts: {
+      mnemonic: "your ganache mnemonic" // Optional: if using mnemonic
+    }
+  }
+}
+```
+
+### Step 5: Deploy Smart Contracts
+
+Compile the smart contracts:
+
+```bash
+npx hardhat compile
+```
+
+Deploy to Ganache:
+
+```bash
+npx hardhat run scripts/deploy.ts --network ganache
+```
+
+The deployment script will automatically update `client/src/deployments.json` with the contract address.
+
+### Step 6: Configure MetaMask
+
+1. Open MetaMask and click the network dropdown
+2. Select "Add Network" → "Add a network manually"
+3. Enter the following details:
+   - **Network Name**: Ganache Local
+   - **RPC URL**: `http://127.0.0.1:7545` (or your Ganache URL)
+   - **Chain ID**: `1337` (or your Ganache Chain ID)
+   - **Currency Symbol**: ETH
+4. Click "Save"
+
+5. Import an account from Ganache:
+   - In Ganache, click the key icon next to an account to reveal the private key
+   - In MetaMask, click the account icon → "Import Account"
+   - Paste the private key and click "Import"
+
+## 🚀 Running the Project
+
+### Start Ganache
+
+1. Open Ganache application
+2. Create or open a workspace
+3. Ensure the server is running
+
+### Deploy Contracts (if not already deployed)
+
+```bash
+npx hardhat run scripts/deploy.ts --network ganache
+```
+
+### Start the Frontend
+
+```bash
+cd client
+npm run dev
+```
+
+The application will be available at [http://localhost:3000](http://localhost:3000)
+
+### Build for Production
+
+```bash
+cd client
+npm run build
+npm start
+```
+
+## 📖 Usage Guide
+
+### 1. Register Roles
+
+- Navigate to "Register Roles" page
+- Only the contract owner can register new roles
+- Add participants: Raw Material Suppliers, Manufacturers, Distributors, and Retailers
+- Each role requires: Ethereum address, name, and location
+
+### 2. Order Materials
+
+- Go to "Order Materials" page
+- Only the contract owner can create orders
+- Enter product details: ID, name, and description
+- Ensure at least one participant of each role is registered
+
+### 3. Manage Supply Chain Flow
+
+- Access "Supply Chain Flow" page
+- Each role can perform their specific action:
+  - **Raw Material Supplier**: Supply raw materials
+  - **Manufacturer**: Manufacture products
+  - **Distributor**: Distribute products
+  - **Retailer**: Retail and mark as sold
+
+### 4. Track Products
+
+- Visit "Track Materials" page
+- Enter a product ID to view its complete journey
+- View detailed information about each stage
+- Generate QR codes for product verification
+
+## 🔐 Smart Contract Details
+
+The `SupplyChain.sol` smart contract implements a comprehensive supply chain management system with the following features:
+
+### Roles
+
+- **Owner**: Deploys the contract and can register other roles
+- **Raw Material Supplier (RMS)**: Supplies raw materials
+- **Manufacturer (MAN)**: Manufactures products
+- **Distributor (DIS)**: Distributes products
+- **Retailer (RET)**: Sells products to consumers
+
+### Product Stages
+
+1. **Ordered** (Stage 0): Product order created
+2. **Raw Material Supplied** (Stage 1): Raw materials supplied
+3. **Manufacturing** (Stage 2): Product being manufactured
+4. **Distribution** (Stage 3): Product in distribution
+5. **Retail** (Stage 4): Product at retailer
+6. **Sold** (Stage 5): Product sold to consumer
+
+### Key Functions
+
+- `addRMS()`, `addManufacturer()`, `addDistributor()`, `addRetailer()`: Register participants
+- `addMedicine()`: Create new product orders
+- `RMSsupply()`, `Manufacturing()`, `Distribute()`, `Retail()`, `sold()`: Progress products through stages
+- `showStage()`: Get current stage of a product
+
+![Smart Contract Flow](https://raw.githubusercontent.com/faizack619/Supply-Chain-Gode-Blockchain/master/client/public/Supply%20Chain%20Design%20(1).png)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+### Contribution Guidelines
+
+- Follow the existing code style
+- Write clear commit messages
+- Add tests for new features
+- Update documentation as needed
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📚 Documentation
+
+### External Resources
+
+- [Solidity Documentation](https://docs.soliditylang.org/en/v0.8.19/)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://reactjs.org/docs/getting-started.html)
+- [Hardhat Documentation](https://hardhat.org/docs)
+- [Web3.js Documentation](https://web3js.readthedocs.io/)
+- [Ganache Documentation](https://trufflesuite.com/docs/ganache/overview)
+- [MetaMask Documentation](https://docs.metamask.io/)
 
 
 
-## Smart Contract Working Flow
+## ⭐ Show Your Support
 
-![https://raw.githubusercontent.com/faizack619/Supply-Chain-Gode-Blockchain/master/client/public/Supply%20Chain%20Design%20(1).png?token=GHSAT0AAAAAAB52SPAT5YHI3AALNPFXL27AY7OU3IQ](https://raw.githubusercontent.com/faizack619/Supply-Chain-Gode-Blockchain/master/client/public/Supply%20Chain%20Design%20(1).png?token=GHSAT0AAAAAAB52SPAT5YHI3AALNPFXL27AY7OU3IQ)
+If you find this project helpful, please consider:
 
-This is a SupplyChain smart contract written in Solidity. The contract models the various roles and stages involved in the supply chain of a pharmaceutical product.
+- ⭐ Starring the repository
+- 🍴 Forking the project
+- 🐛 Reporting bugs
+- 💡 Suggesting new features
+- 📢 Sharing with others
 
-The contract owner is the person who deploys the contract and is the only one who can authorize various roles like retailer, manufacturer, etc.
+---
 
-There are several roles involved in the supply chain of the pharmaceutical product. These include the raw material supplier, manufacturer, distributor, and retailer.
+<div align="center">
 
-The smart contract stores information about the medicine, such as its name, description, and current stage in the supply chain. There is also a function to show the current stage of a medicine, which can be used by client applications.
+**Made with ❤️ using Solidity, Next.js, and Web3**
 
-The smart contract also stores information about the various players in the supply chain, such as their name, address, and place of operation.
+[⬆ Back to Top](#-supply-chain-blockchain-dapp)
 
-The addRMS(), addManufacturer(), addDistributor(), and addRetailer() functions can be used by the contract owner to add new players to the supply chain.
-
-Overall, this smart contract provides a way to track the various stages of a pharmaceutical product in the supply chain, ensuring transparency and accountability.
-
-
-##  🔧 Setting up Local Development
-
-### Step1.
-## Installation and Setup
-
-* **VSCODE** : VSCode can be downloaded from https://code.visualstudio.com/
-* **Node.js** : Download the latest version of Node.js from https://nodejs.org/ and after installation check     Version using terimal: node -v .
-* **Git** : Download the latest version of Git from the official website at https://git-scm.com/downloads and   check Version using terimal: git --version.
-
-* **Ganache** : Download the latest version of Ganache from the official website at https://www.trufflesuite.com/ganache.
-* **MetaMask** : can be installed as a browser extension from the Chrome Web Store or Firefox Add-ons store.
-  
-### Step2.
-## Create,Compile & Deploy Smart Contract. 
-
-* Open VScode and open VScode Terimal by Ctrl + ' .
-* **Clone Project** Type the following command and press Enter : git clone : ` https://github.com/faizack619/Supply-Chain-Blockchain.git  
-* **Install truffle** : Type the following command and press Enter: `npm install -g truffle`
-* **Install dependencies** : Type the following command and press Enter: `npm i`
-* **File structure for  DApp** : 
-  
-    **contracts**: This folder contains the Solidity smart contracts for the DApp. The Migrations.sol contract is automatically created by Truffle and is used for managing migrations.
-
-    **migrations**: This folder contains the JavaScript migration files used to deploy the smart contracts to the blockchain network.
-
-    **test**: This folder contains the JavaScript test files used to test the smart contracts.
-
-    **truffle-config.js**: This file contains the configuration for the Truffle project, including the blockchain network to be used and any necessary settings.
-
-    **package.jso**n: This file contains information about the dependencies and scripts used in the project.
-
-    **package-lock.json**: This file is generated automatically and contains the exact version of each dependency used in the project.
-
-    **Client**s: This Folder contains the client-side code, typically HTML, CSS, and JavaScript, can be organized into a client folder.
-* **Compile the smart contract** :  In the terminal, use the following command to compile the smart contract: `truffle compile` 
-* **Deploy the smart contract** :
-   
-    * After Compile We Need To Deploy Your Smart Contract on Blockchain. In Our Case We are Using Ganache Which is personal blockchain for Ethereum development, used to test and develop Smart Contracts.
-
-    * Open Ganache and create new WorkSpace.Copy Rpc Server Address.
-
-    * ![https://miro.medium.com/max/1248/1*4rzNT0muOXelP22Ky9178g.png](https://miro.medium.com/max/1248/1*4rzNT0muOXelP22Ky9178g.png)
-
-    * The RPC server is used to allow applications to communicate with the Ethereum blockchain and execute smart contract transactions, query the state of the blockchain, and interact with the Ethereum network.
-
-    * Now to add Rcp address in our truffle-config.js and the replace host address and port address with Our Ganache Rcp.
-
-    * ![https://developers.rsk.co/assets/img/tutorials/truffle-test/image-04.png](https://developers.rsk.co/assets/img/tutorials/truffle-test/image-04.png)
-  
-    * After Changing RCP address.Open terminal and run this cmd : `truffle migrate`.
-    * This Command Will deploye Smart Contract to Blockchain.
-
-### Step 3.
-## Run DAPP. 
-* Open a second terminal and enter the client folder
-  * `cd client`
- 
-* Install all packages in the package.json file
-  * `npm i`
-  
-* Install Web3 in the package.json file
-  * `npm install -save web3`
-
-
-* Run this Command :
-  * `npm`
- 
-* Run the app 
-  * `npm start`
-
-* The app gets hosted by default at port 3000.
-
-### Step 4.
-## Connect Meta Musk with Ganache. 
-
-![https://media.licdn.com/dms/image/C4D12AQHMatPDpLjwkA/article-cover_image-shrink_720_1280/0/1547586411238?e=2147483647&v=beta&t=UDYOS05BSkdrYoGOR5LW7v2uHz1Sca5uNzzWLrQG1nk](https://media.licdn.com/dms/image/C4D12AQHMatPDpLjwkA/article-cover_image-shrink_720_1280/0/1547586411238?e=2147483647&v=beta&t=UDYOS05BSkdrYoGOR5LW7v2uHz1Sca5uNzzWLrQG1nk)
-1. Start Ganache: Start the Ganache application and make note of the RPC server URL and port number.
-
-1. Connect MetaMask: Open MetaMask in your browser and click on the network dropdown in the top-right corner.
-![https://metamask.zendesk.com/hc/article_attachments/10080831633947](https://metamask.zendesk.com/hc/article_attachments/10080831633947)![https://kimsereylam.com/assets/posts/2022-02-25-setup-local-development-blockchain-with-ganache/ganache_network.png](https://kimsereylam.com/assets/posts/2022-02-25-setup-local-development-blockchain-with-ganache/ganache_network.png)
-Select "Custom RPC" and enter the RPC server URL and port number for your Ganache instance. Click "Save".
-
-1. Import an account: In Ganache, click on the "Accounts" tab and select the first account listed. Click on the "Copy" button next to the "Private Key" field copy the private key.
-     ![https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSoSc_d4naUQwI8qo8ClC1NXa4aJA7blvrgn4Xq1looUOiWY3wTGd5x8g5fgCrMzyrOzQ8&usqp=CAUto](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSoSc_d4naUQwI8qo8ClC1NXa4aJA7blvrgn4Xq1looUOiWY3wTGd5x8g5fgCrMzyrOzQ8&usqp=CAU)
- 2. In MetaMask, click on the three dots in the top-right corner, select "Import Account", and paste the private key into the private key field. Click "Import".
-
-     ![https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQs76Q1oyMK717kRZ8FMC_i2VCstu8H2yZFqlfgccSsalxBXWm2PBwzS-peIFv4DqGos9g&usqp=CAU](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQs76Q1oyMK717kRZ8FMC_i2VCstu8H2yZFqlfgccSsalxBXWm2PBwzS-peIFv4DqGos9g&usqp=CAU)
- 3. Add All participate(Raw Material,Supplier,Manufacture,Retail). by following above Step
-
-### License
-This project uses an [MIT](https://opensource.org/licenses/MIT) license.
-## Documentation to help with Solidity
-https://docs.soliditylang.org/en/v0.8.4/
-## Documentation to help with React
-https://reactjs.org/docs/getting-started.html
-## Documentation to help with Truffle
-https://www.trufflesuite.com/docs/truffle/reference/configuration
-## Documentation to help with Ganache-cli
-https://www.trufflesuite.com/docs/ganache/overview
+</div>
