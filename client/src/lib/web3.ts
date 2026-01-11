@@ -27,7 +27,7 @@ export const getContract = async () => {
   const web3 = window.web3!
   const accounts = await web3.eth.getAccounts()
   const networkId = await web3.eth.net.getId()
-  
+
   // Import deployment info
   const deployments = await import('../deployments.json')
   const networkIdStr = networkId.toString()
@@ -54,7 +54,7 @@ export const switchToNetwork = async (chainId: string | number) => {
   }
 
   const chainIdHex = `0x${Number(chainId).toString(16)}`
-  
+
   try {
     await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
@@ -70,15 +70,13 @@ export const switchToNetwork = async (chainId: string | number) => {
           params: [
             {
               chainId: chainIdHex,
-              chainName: chainId === '1337' || chainId === '5777' ? 'Ganache Local' : 'Hardhat Local',
+              chainName: 'Hardhat Local',
               nativeCurrency: {
                 name: 'ETH',
                 symbol: 'ETH',
                 decimals: 18,
               },
-              rpcUrls: chainId === '1337' || chainId === '5777'
-                ? ['http://127.0.0.1:7545'] 
-                : ['http://127.0.0.1:8545'],
+              rpcUrls: ['http://127.0.0.1:8545'],
             },
           ],
         })

@@ -57,10 +57,7 @@ npm run node
 npm run deploy:local
 ```
 
-Deploy to Ganache:
-```bash
-npm run deploy:ganache
-```
+
 
 After deployment, update `client/src/deployments.json` with the deployed contract address.
 
@@ -91,7 +88,7 @@ npm run dev
 The project is configured with the following networks:
 - `hardhat`: Local Hardhat Network (chainId: 1337)
 - `localhost`: Connect to a running Hardhat node (chainId: 1337)
-- `ganache`: Connect to Ganache (chainId: 5777)
+
 
 ### Contract Deployment
 

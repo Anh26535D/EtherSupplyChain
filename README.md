@@ -71,7 +71,7 @@ Watch the demo video: [Canva Design Demo](https://www.canva.com/design/DAFb-i9v_
 ### Backend/Blockchain
 - **Solidity ^0.8.19** - Smart contract programming language
 - **Hardhat** - Ethereum development environment
-- **Ganache** - Personal blockchain for development
+
 - **MetaMask** - Web3 wallet integration
 
 ### Development Tools
@@ -86,7 +86,7 @@ The application follows a decentralized architecture where:
 1. **Smart Contracts** (Solidity) handle all business logic and data storage on the blockchain
 2. **Frontend** (Next.js) provides the user interface and interacts with the blockchain via Web3.js
 3. **MetaMask** acts as the bridge between users and the Ethereum network
-4. **Ganache** provides a local blockchain for development and testing
+
 
 ### System Flow
 
@@ -114,7 +114,7 @@ Before you begin, ensure you have the following installed:
 
 - **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
 - **Git** - [Download](https://git-scm.com/downloads)
-- **Ganache** - [Download](https://trufflesuite.com/ganache/)
+
 - **MetaMask** - [Chrome Extension](https://chrome.google.com/webstore/detail/metamask) | [Firefox Add-on](https://addons.mozilla.org/en-US/firefox/addon/ether-metamask/)
 - **VS Code** (Recommended) - [Download](https://code.visualstudio.com/)
 
@@ -143,27 +143,16 @@ npm install
 cd ..
 ```
 
-### Step 3: Configure Ganache
+### Step 3: Start Local Node
 
-1. Open Ganache and create a new workspace
-2. Note the RPC Server URL (usually `http://127.0.0.1:7545` or `http://127.0.0.1:8545`)
-3. Copy the Chain ID (usually `1337` or `5777`)
+Start a local Hardhat node:
 
-### Step 4: Configure Hardhat
-
-Update `hardhat.config.ts` with your Ganache network settings:
-
-```typescript
-networks: {
-  ganache: {
-    url: "http://127.0.0.1:7545", // Your Ganache RPC URL
-    chainId: 1337, // Your Ganache Chain ID
-    accounts: {
-      mnemonic: "your ganache mnemonic" // Optional: if using mnemonic
-    }
-  }
-}
+```bash
+cd backend
+npx hardhat node
 ```
+
+This will start a local blockchain at `http://127.0.0.1:8545` with Chain ID `1337`.
 
 ### Step 5: Deploy Smart Contracts
 
@@ -173,42 +162,43 @@ Compile the smart contracts:
 npx hardhat compile
 ```
 
-Deploy to Ganache:
+Deploy to Localhost:
 
 ```bash
-npx hardhat run scripts/deploy.ts --network ganache
+npx hardhat run scripts/deploy.ts --network localhost
 ```
 
 The deployment script will automatically update `client/src/deployments.json` with the contract address.
 
-### Step 6: Configure MetaMask
+### Step 4: Configure MetaMask
 
 1. Open MetaMask and click the network dropdown
 2. Select "Add Network" → "Add a network manually"
 3. Enter the following details:
-   - **Network Name**: Ganache Local
-   - **RPC URL**: `http://127.0.0.1:7545` (or your Ganache URL)
-   - **Chain ID**: `1337` (or your Ganache Chain ID)
+   - **Network Name**: Hardhat Local
+   - **RPC URL**: `http://127.0.0.1:8545`
+   - **Chain ID**: `1337`
    - **Currency Symbol**: ETH
 4. Click "Save"
 
-5. Import an account from Ganache:
-   - In Ganache, click the key icon next to an account to reveal the private key
+5. Import an account from Hardhat Node:
+   - Copy one of the private keys displayed in the terminal where you started `npx hardhat node`
    - In MetaMask, click the account icon → "Import Account"
    - Paste the private key and click "Import"
 
 ## 🚀 Running the Project
 
-### Start Ganache
+### Start Local Node
 
-1. Open Ganache application
-2. Create or open a workspace
-3. Ensure the server is running
+```bash
+cd backend
+npx hardhat node
+```
 
 ### Deploy Contracts (if not already deployed)
 
 ```bash
-npx hardhat run scripts/deploy.ts --network ganache
+npx hardhat run scripts/deploy.ts --network localhost
 ```
 
 ### Start the Frontend
@@ -320,7 +310,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [React Documentation](https://reactjs.org/docs/getting-started.html)
 - [Hardhat Documentation](https://hardhat.org/docs)
 - [Web3.js Documentation](https://web3js.readthedocs.io/)
-- [Ganache Documentation](https://trufflesuite.com/docs/ganache/overview)
+
 - [MetaMask Documentation](https://docs.metamask.io/)
 
 

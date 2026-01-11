@@ -7,7 +7,7 @@ async function main() {
 
   const [deployer] = await ethers.getSigners()
   console.log('Deploying with account:', deployer.address)
-  
+
   const balance = await ethers.provider.getBalance(deployer.address)
   console.log('Account balance:', ethers.formatEther(balance), 'ETH')
 
@@ -29,7 +29,10 @@ async function main() {
 
   // Update deployments.json
   const deploymentsPath = path.join(__dirname, '../../client/src/deployments.json')
-  const deployments = JSON.parse(fs.readFileSync(deploymentsPath, 'utf8'))
+  let deployments = { networks: {} as Record<string, any> }
+  if (fs.existsSync(deploymentsPath)) {
+    deployments = JSON.parse(fs.readFileSync(deploymentsPath, 'utf8'))
+  }
 
   if (!deployments.networks[chainId]) {
     deployments.networks[chainId] = {}

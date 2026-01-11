@@ -14,9 +14,9 @@ export default function NetworkHelper() {
           const networkId = await window.ethereum.request({ method: 'eth_chainId' })
           const chainId = parseInt(networkId, 16).toString()
           setCurrentNetwork(chainId)
-          
-          // Show helper if NOT on network 1337 or 5777 (Ganache can use either)
-          // But we prefer 1337 as that's where the contract is deployed
+
+          // Show helper if NOT on network 1337
+          // We prefer 1337 as that's where the contract is deployed
           const deployments = await import('@/deployments.json')
           const availableNetworks = Object.keys(deployments.networks)
           if (!availableNetworks.includes(chainId)) {

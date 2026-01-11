@@ -29,3 +29,14 @@ yarn-error.log*
 node_modules/
 
 deployments.json
+
+# Hardhat
+typechain-types/
+artifacts/
+cache/
+backend/typechain-types/
+backend/cache/
+backend/artifacts/
+
+# Logs
+*.log
