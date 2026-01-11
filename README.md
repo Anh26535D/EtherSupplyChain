@@ -76,7 +76,7 @@ Watch the demo video: [Canva Design Demo](https://www.canva.com/design/DAFb-i9v_
 
 ### Development Tools
 - **Node.js 18+** - JavaScript runtime
-- **npm/yarn** - Package management
+- **npm** - Package management
 - **Git** - Version control
 
 ## 🏗 Architecture

@@ -17,7 +17,7 @@ Supply-Chain-Blockchain/
 ## Prerequisites
 
 - Node.js 18+
-- npm or yarn
+- npm
 - MetaMask browser extension
 
 ## Installation

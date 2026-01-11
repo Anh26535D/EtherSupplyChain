@@ -7,7 +7,7 @@ This is a Next.js application with TypeScript and Tailwind CSS for managing a bl
 ### Prerequisites
 
 - Node.js 18+ 
-- npm or yarn
+- npm
 - MetaMask browser extension
 
 ### Installation
@@ -15,15 +15,11 @@ This is a Next.js application with TypeScript and Tailwind CSS for managing a bl
 1. Install dependencies:
 ```bash
 npm install
-# or
-yarn install
 ```
 
 2. Run the development server:
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
 3. Open [http://localhost:3000](http://localhost:3000) in your browser.
