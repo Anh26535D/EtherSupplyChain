@@ -22,6 +22,8 @@ contract SupplyChain {
         _;
     }
 
+    event UserRegister(address indexed _user, string _role, string _message);
+
     //stages of a medicine in pharma supply chain
     enum STAGE {
         Init,
@@ -60,11 +62,9 @@ contract SupplyChain {
     mapping(uint256 => medicine) public MedicineStock;
 
     //To show status to client applications
-    function showStage(uint256 _medicineID)
-        public
-        view
-        returns (string memory)
-    {
+    function showStage(
+        uint256 _medicineID
+    ) public view returns (string memory) {
         require(medicineCtr > 0);
         if (MedicineStock[_medicineID].stage == STAGE.Init)
             return "Medicine Ordered";
@@ -78,6 +78,7 @@ contract SupplyChain {
             return "Retail Stage";
         else if (MedicineStock[_medicineID].stage == STAGE.sold)
             return "Medicine Sold";
+        return "";
     }
 
     //To store information about raw material supplier
@@ -129,9 +130,23 @@ contract SupplyChain {
         address _address,
         string memory _name,
         string memory _place
-    ) public onlyByOwner() {
+    ) public onlyByOwner {
+        // Avoid duplicate RMS
+        if (findRMS(_address) != 0) {
+            emit UserRegister(
+                _address,
+                "Raw Material Supplier",
+                "Already Registered"
+            );
+            return;
+        }
         rmsCtr++;
         RMS[rmsCtr] = rawMaterialSupplier(_address, rmsCtr, _name, _place);
+        emit UserRegister(
+            _address,
+            "Raw Material Supplier",
+            "Registered Successfully"
+        );
     }
 
     //To add manufacturer. Only contract owner can add a new manufacturer
@@ -139,9 +154,14 @@ contract SupplyChain {
         address _address,
         string memory _name,
         string memory _place
-    ) public onlyByOwner() {
+    ) public onlyByOwner {
+        if (findMAN(_address) != 0) {
+            emit UserRegister(_address, "Manufacturer", "Already Registered");
+            return;
+        }
         manCtr++;
         MAN[manCtr] = manufacturer(_address, manCtr, _name, _place);
+        emit UserRegister(_address, "Manufacturer", "Registered Successfully");
     }
 
     //To add distributor. Only contract owner can add a new distributor
@@ -149,9 +169,14 @@ contract SupplyChain {
         address _address,
         string memory _name,
         string memory _place
-    ) public onlyByOwner() {
+    ) public onlyByOwner {
+        if (findDIS(_address) != 0) {
+            emit UserRegister(_address, "Distributor", "Already Registered");
+            return;
+        }
         disCtr++;
         DIS[disCtr] = distributor(_address, disCtr, _name, _place);
+        emit UserRegister(_address, "Distributor", "Registered Successfully");
     }
 
     //To add retailer. Only contract owner can add a new retailer
@@ -159,9 +184,14 @@ contract SupplyChain {
         address _address,
         string memory _name,
         string memory _place
-    ) public onlyByOwner() {
+    ) public onlyByOwner {
+        if (findRET(_address) != 0) {
+            emit UserRegister(_address, "Retailer", "Already Registered");
+            return;
+        }
         retCtr++;
         RET[retCtr] = retailer(_address, retCtr, _name, _place);
+        emit UserRegister(_address, "Retailer", "Registered Successfully");
     }
 
     //To supply raw materials from RMS supplier to the manufacturer
@@ -176,7 +206,7 @@ contract SupplyChain {
 
     //To check if RMS is available in the blockchain
     function findRMS(address _address) private view returns (uint256) {
-        require(rmsCtr > 0);
+        // require(rmsCtr > 0);
         for (uint256 i = 1; i <= rmsCtr; i++) {
             if (RMS[i].addr == _address) return RMS[i].id;
         }
@@ -195,7 +225,7 @@ contract SupplyChain {
 
     //To check if Manufacturer is available in the blockchain
     function findMAN(address _address) private view returns (uint256) {
-        require(manCtr > 0);
+        // require(manCtr > 0);
         for (uint256 i = 1; i <= manCtr; i++) {
             if (MAN[i].addr == _address) return MAN[i].id;
         }
@@ -214,7 +244,7 @@ contract SupplyChain {
 
     //To check if distributor is available in the blockchain
     function findDIS(address _address) private view returns (uint256) {
-        require(disCtr > 0);
+        // require(disCtr > 0);
         for (uint256 i = 1; i <= disCtr; i++) {
             if (DIS[i].addr == _address) return DIS[i].id;
         }
@@ -233,7 +263,7 @@ contract SupplyChain {
 
     //To check if retailer is available in the blockchain
     function findRET(address _address) private view returns (uint256) {
-        require(retCtr > 0);
+        // require(retCtr > 0);
         for (uint256 i = 1; i <= retCtr; i++) {
             if (RET[i].addr == _address) return RET[i].id;
         }
@@ -251,10 +281,10 @@ contract SupplyChain {
     }
 
     // To add new medicines to the stock
-    function addMedicine(string memory _name, string memory _description)
-        public
-        onlyByOwner()
-    {
+    function addMedicine(
+        string memory _name,
+        string memory _description
+    ) public onlyByOwner {
         require((rmsCtr > 0) && (manCtr > 0) && (disCtr > 0) && (retCtr > 0));
         medicineCtr++;
         MedicineStock[medicineCtr] = medicine(
