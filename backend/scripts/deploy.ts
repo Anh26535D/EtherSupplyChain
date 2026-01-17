@@ -1,6 +1,6 @@
-import { ethers } from 'hardhat'
-import * as fs from 'fs'
-import * as path from 'path'
+import { ethers } from "hardhat";
+import fs from "fs";
+import path from "path";
 
 async function main() {
   console.log('Deploying SupplyChain contract...')
@@ -18,38 +18,39 @@ async function main() {
   const SupplyChain = await ethers.getContractFactory('SupplyChain')
   const supplyChain = await SupplyChain.deploy()
 
-  await supplyChain.waitForDeployment()
+    await supplyChain.waitForDeployment();
+    const address = await supplyChain.getAddress();
 
-  const address = await supplyChain.getAddress()
-  const network = await ethers.provider.getNetwork()
-  const chainId = network.chainId.toString()
+    console.log("SupplyChain deployed to:", address);
 
-  console.log('SupplyChain deployed to:', address)
-  console.log('Network chain ID:', chainId)
+    // Update backend config
+    // Note: hardhat.config.ts might be using a different path logic, but sticking to the request context:
+    // We need to write to client/src/deployments.json which is ../client/src/deployments.json relative to backend
 
-  // Update deployments.json
-  const deploymentsPath = path.join(__dirname, '../../client/src/deployments.json')
-  let deployments = { networks: {} as Record<string, any> }
-  if (fs.existsSync(deploymentsPath)) {
-    deployments = JSON.parse(fs.readFileSync(deploymentsPath, 'utf8'))
-  }
+    const deploymentsDir = path.join(__dirname, "../../client/src");
+    if (!fs.existsSync(deploymentsDir)) {
+        fs.mkdirSync(deploymentsDir, { recursive: true });
+    }
 
-  if (!deployments.networks[chainId]) {
-    deployments.networks[chainId] = {}
-  }
+    const deployments = {
+        networks: {
+            "1337": {
+                "SupplyChain": {
+                    "address": address
+                }
+            }
+        }
+    };
 
-  deployments.networks[chainId].SupplyChain = {
-    address: address,
-  }
+    fs.writeFileSync(
+        path.join(deploymentsDir, "deployments.json"),
+        JSON.stringify(deployments, null, 2)
+    );
 
-  fs.writeFileSync(deploymentsPath, JSON.stringify(deployments, null, 2))
-  console.log('Deployment info saved to client/src/deployments.json')
+    console.log(`Updated client deployments at ${path.join(deploymentsDir, "deployments.json")}`);
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error)
-    process.exit(1)
-  })
-
+main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+});

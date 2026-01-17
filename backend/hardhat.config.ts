@@ -3,7 +3,7 @@ import '@nomicfoundation/hardhat-toolbox'
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: '0.8.19',
+    version: '0.8.28',
     settings: {
       optimizer: {
         enabled: true,
@@ -15,7 +15,7 @@ const config: HardhatUserConfig = {
     sources: './contracts',
     tests: './test',
     cache: './cache',
-    artifacts: './client/src/artifacts',
+    artifacts: '../client/src/artifacts',
   },
   networks: {
     hardhat: {
@@ -25,7 +25,6 @@ const config: HardhatUserConfig = {
       url: 'http://127.0.0.1:8545',
       chainId: 1337,
     },
-    // Ganache networks removed. Use localhost.
   },
 }
 
