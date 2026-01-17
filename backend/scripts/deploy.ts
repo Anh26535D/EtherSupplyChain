@@ -3,20 +3,20 @@ import fs from "fs";
 import path from "path";
 
 async function main() {
-  console.log('Deploying SupplyChain contract...')
+    console.log('Deploying SupplyChain contract...')
 
-  const [deployer] = await ethers.getSigners()
-  console.log('Deploying with account:', deployer.address)
+    const [deployer] = await ethers.getSigners()
+    console.log('Deploying with account:', deployer.address)
 
-  const balance = await ethers.provider.getBalance(deployer.address)
-  console.log('Account balance:', ethers.formatEther(balance), 'ETH')
+    const balance = await ethers.provider.getBalance(deployer.address)
+    console.log('Account balance:', ethers.formatEther(balance), 'ETH')
 
-  if (balance === 0n) {
-    throw new Error('Account has no funds. Please fund the account or use a different account.')
-  }
+    if (balance === 0n) {
+        throw new Error('Account has no funds. Please fund the account or use a different account.')
+    }
 
-  const SupplyChain = await ethers.getContractFactory('SupplyChain')
-  const supplyChain = await SupplyChain.deploy()
+    const SupplyChain = await ethers.getContractFactory('SupplyChain')
+    const supplyChain = await SupplyChain.deploy()
 
     await supplyChain.waitForDeployment();
     const address = await supplyChain.getAddress();
@@ -47,10 +47,12 @@ async function main() {
         JSON.stringify(deployments, null, 2)
     );
 
-    console.log(`Updated client deployments at ${path.join(deploymentsDir, "deployments.json")}`);
+    const output = `Updated client deployments at ${path.join(deploymentsDir, "deployments.json")}\n`;
+    fs.writeSync(1, output);
+    process.exit(0);
 }
 
 main().catch((error) => {
     console.error(error);
-    process.exitCode = 1;
+    process.exit(1);
 });
