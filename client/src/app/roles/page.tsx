@@ -56,34 +56,34 @@ export default function AssignRoles() {
       const retCount = await contract.methods.retCtr().call()
 
       const rms = await Promise.all(
-        Array(parseInt(rmsCount))
+        Array(Number(rmsCount))
           .fill(null)
           .map((_, i) => contract.methods.RMS(i + 1).call())
       )
       const man = await Promise.all(
-        Array(parseInt(manCount))
+        Array(Number(manCount))
           .fill(null)
           .map((_, i) => contract.methods.MAN(i + 1).call())
       )
       const dis = await Promise.all(
-        Array(parseInt(disCount))
+        Array(Number(disCount))
           .fill(null)
           .map((_, i) => contract.methods.DIS(i + 1).call())
       )
       const ret = await Promise.all(
-        Array(parseInt(retCount))
+        Array(Number(retCount))
           .fill(null)
           .map((_, i) => contract.methods.RET(i + 1).call())
       )
 
       setRoles({ rms, man, dis, ret })
-      
+
       // Check if current account is the owner
       const ownerStatus = await checkIsOwner()
       setIsOwner(ownerStatus)
       const owner = await getContractOwner()
       if (owner) setContractOwner(owner)
-      
+
       setLoading(false)
     } catch (err: any) {
       const errorMessage = err?.message || 'The smart contract is not deployed to the current network'
@@ -124,10 +124,21 @@ export default function AssignRoles() {
           return
       }
       if (receipt) {
-        alert('Role registered successfully!')
-        loadBlockchainData()
-        setNewRole({ address: '', name: '', place: '', type: 'rms' })
+        const event = receipt.events?.UserRegister
+        let message = ''
+
+        if (event) {
+          // Handle potential array of events or single event object
+          const returnValues = Array.isArray(event) ? event[event.length - 1].returnValues : event.returnValues
+          // @ts-ignore
+          message = returnValues._message
+        }
+
+        alert(message || 'Role registered successfully!')
       }
+
+      loadBlockchainData()
+      setNewRole({ address: '', name: '', place: '', type: 'rms' })
     } catch (err: any) {
       let errorMessage = 'An error occurred!'
       if (err?.message) {
@@ -137,7 +148,7 @@ export default function AssignRoles() {
       } else if (typeof err === 'string') {
         errorMessage = err
       }
-      
+
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
         if (errorMessage.includes('Owner')) {
@@ -146,7 +157,7 @@ export default function AssignRoles() {
           errorMessage = `Transaction failed: ${errorMessage}`
         }
       }
-      
+
       console.error('Transaction error:', err)
       alert(errorMessage)
     }
@@ -404,11 +415,10 @@ export default function AssignRoles() {
             <button
               type="submit"
               disabled={!isOwner}
-              className={`w-full px-6 py-4 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform ${
-                isOwner
-                  ? `bg-gradient-to-r ${roleConfig[newRole.type as keyof typeof roleConfig].gradient} text-white hover:scale-105 cursor-pointer`
-                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-              } flex items-center justify-center`}
+              className={`w-full px-6 py-4 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform ${isOwner
+                ? `bg-gradient-to-r ${roleConfig[newRole.type as keyof typeof roleConfig].gradient} text-white hover:scale-105 cursor-pointer`
+                : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                } flex items-center justify-center`}
             >
               {isOwner ? (
                 <>

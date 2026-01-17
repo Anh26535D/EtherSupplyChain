@@ -40,7 +40,7 @@ export default function Supply() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const medCtr = await contract.methods.medicineCtr().call()
+      const medCtr = Number(await contract.methods.medicineCtr().call())
       const medData: { [key: number]: Medicine } = {}
       const medStageData: string[] = []
 
@@ -96,7 +96,7 @@ export default function Supply() {
       } else if (err?.error?.message) {
         errorMessage = err.error.message
       }
-      
+
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
         if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
@@ -109,7 +109,7 @@ export default function Supply() {
           errorMessage = `Transaction failed: ${errorMessage}`
         }
       }
-      
+
       console.error('Transaction error:', err)
       alert(errorMessage)
     }
@@ -131,7 +131,7 @@ export default function Supply() {
       } else if (err?.error?.message) {
         errorMessage = err.error.message
       }
-      
+
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
         if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
@@ -144,7 +144,7 @@ export default function Supply() {
           errorMessage = `Transaction failed: ${errorMessage}`
         }
       }
-      
+
       console.error('Transaction error:', err)
       alert(errorMessage)
     }
@@ -166,7 +166,7 @@ export default function Supply() {
       } else if (err?.error?.message) {
         errorMessage = err.error.message
       }
-      
+
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
         if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
@@ -179,7 +179,7 @@ export default function Supply() {
           errorMessage = `Transaction failed: ${errorMessage}`
         }
       }
-      
+
       console.error('Transaction error:', err)
       alert(errorMessage)
     }
@@ -201,7 +201,7 @@ export default function Supply() {
       } else if (err?.error?.message) {
         errorMessage = err.error.message
       }
-      
+
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
         if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
@@ -214,7 +214,7 @@ export default function Supply() {
           errorMessage = `Transaction failed: ${errorMessage}`
         }
       }
-      
+
       console.error('Transaction error:', err)
       alert(errorMessage)
     }
@@ -236,7 +236,7 @@ export default function Supply() {
       } else if (err?.error?.message) {
         errorMessage = err.error.message
       }
-      
+
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
         if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
@@ -249,7 +249,7 @@ export default function Supply() {
           errorMessage = `Transaction failed: ${errorMessage}`
         }
       }
-      
+
       console.error('Transaction error:', err)
       alert(errorMessage)
     }
@@ -394,7 +394,7 @@ export default function Supply() {
               Total: {Object.keys(med).length} items
             </div>
           </div>
-          
+
           {Object.keys(med).length === 0 ? (
             <div className="text-center py-12">
               <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

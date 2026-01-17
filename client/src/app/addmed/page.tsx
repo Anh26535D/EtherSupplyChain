@@ -47,7 +47,7 @@ export default function AddMed() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const medCtr = await contract.methods.medicineCtr().call()
+      const medCtr = Number(await contract.methods.medicineCtr().call())
       const medData: { [key: number]: Medicine } = {}
       const medStageData: string[] = []
 
@@ -58,26 +58,26 @@ export default function AddMed() {
 
       setMed(medData)
       setMedStage(medStageData)
-      
+
       // Check role counts
       const rmsCount = await contract.methods.rmsCtr().call()
       const manCount = await contract.methods.manCtr().call()
       const disCount = await contract.methods.disCtr().call()
       const retCount = await contract.methods.retCtr().call()
-      
+
       setRoleCounts({
-        rms: parseInt(rmsCount),
-        man: parseInt(manCount),
-        dis: parseInt(disCount),
-        ret: parseInt(retCount),
+        rms: Number(rmsCount),
+        man: Number(manCount),
+        dis: Number(disCount),
+        ret: Number(retCount),
       })
-      
+
       // Check if current account is the owner
       const ownerStatus = await checkIsOwner()
       setIsOwner(ownerStatus)
       const owner = await getContractOwner()
       if (owner) setContractOwner(owner)
-      
+
       setLoader(false)
     } catch (err: any) {
       const errorMessage = err?.message || 'The smart contract is not deployed to the current network'
@@ -113,7 +113,7 @@ export default function AddMed() {
       } else if (err?.error?.message) {
         errorMessage = err.error.message
       }
-      
+
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
         if (errorMessage.includes('Owner')) {
@@ -124,7 +124,7 @@ export default function AddMed() {
           errorMessage = `Transaction failed: ${errorMessage}`
         }
       }
-      
+
       console.error('Transaction error:', err)
       alert(errorMessage)
     } finally {
@@ -301,7 +301,7 @@ export default function AddMed() {
             </button>
           </div>
         )}
-        
+
         {/* Order Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           <div className="flex items-center mb-6">
@@ -312,7 +312,7 @@ export default function AddMed() {
             </div>
             <h2 className="text-2xl font-bold text-gray-800">Create New Material Order</h2>
           </div>
-          
+
           <form onSubmit={handlerSubmitMED} className="space-y-5">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -330,7 +330,7 @@ export default function AddMed() {
                 disabled={isSubmitting}
               />
             </div>
-            
+
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -347,15 +347,14 @@ export default function AddMed() {
                 disabled={isSubmitting}
               />
             </div>
-            
+
             <button
               type="submit"
               disabled={!isOwner || roleCounts.rms === 0 || roleCounts.man === 0 || roleCounts.dis === 0 || roleCounts.ret === 0 || isSubmitting}
-              className={`w-full px-6 py-4 rounded-xl transition-all font-semibold text-lg flex items-center justify-center shadow-lg ${
-                isOwner && roleCounts.rms > 0 && roleCounts.man > 0 && roleCounts.dis > 0 && roleCounts.ret > 0 && !isSubmitting
+              className={`w-full px-6 py-4 rounded-xl transition-all font-semibold text-lg flex items-center justify-center shadow-lg ${isOwner && roleCounts.rms > 0 && roleCounts.man > 0 && roleCounts.dis > 0 && roleCounts.ret > 0 && !isSubmitting
                   ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 hover:shadow-xl transform hover:scale-105'
                   : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-              }`}
+                }`}
             >
               {isSubmitting ? (
                 <>
@@ -406,7 +405,7 @@ export default function AddMed() {
               Total: {Object.keys(med).length} items
             </div>
           </div>
-          
+
           {Object.keys(med).length === 0 ? (
             <div className="text-center py-12">
               <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

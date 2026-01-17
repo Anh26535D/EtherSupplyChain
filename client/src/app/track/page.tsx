@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
 import { QRCodeCanvas } from 'qrcode.react'
@@ -54,7 +54,7 @@ export default function Track() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const medCtr = await contract.methods.medicineCtr().call()
+      const medCtr = Number(await contract.methods.medicineCtr().call())
       const medData: { [key: number]: Medicine } = {}
       const medStageData: { [key: number]: string } = {}
 
@@ -66,28 +66,28 @@ export default function Track() {
       setMed(medData)
       setMedStage(medStageData)
 
-      const rmsCtr = await contract.methods.rmsCtr().call()
+      const rmsCtr = Number(await contract.methods.rmsCtr().call())
       const rmsData: { [key: number]: Role } = {}
       for (let i = 0; i < rmsCtr; i++) {
         rmsData[i + 1] = await contract.methods.RMS(i + 1).call()
       }
       setRMS(rmsData)
 
-      const manCtr = await contract.methods.manCtr().call()
+      const manCtr = Number(await contract.methods.manCtr().call())
       const manData: { [key: number]: Role } = {}
       for (let i = 0; i < manCtr; i++) {
         manData[i + 1] = await contract.methods.MAN(i + 1).call()
       }
       setMAN(manData)
 
-      const disCtr = await contract.methods.disCtr().call()
+      const disCtr = Number(await contract.methods.disCtr().call())
       const disData: { [key: number]: Role } = {}
       for (let i = 0; i < disCtr; i++) {
         disData[i + 1] = await contract.methods.DIS(i + 1).call()
       }
       setDIS(disData)
 
-      const retCtr = await contract.methods.retCtr().call()
+      const retCtr = Number(await contract.methods.retCtr().call())
       const retData: { [key: number]: Role } = {}
       for (let i = 0; i < retCtr; i++) {
         retData[i + 1] = await contract.methods.RET(i + 1).call()
@@ -121,19 +121,19 @@ export default function Track() {
   const trackMedicine = async (medicineId: number) => {
     try {
       const ctr = await supplyChain.methods.medicineCtr().call()
-      if (!(medicineId > 0 && medicineId <= parseInt(ctr))) {
+      if (!(medicineId > 0 && medicineId <= Number(ctr))) {
         alert('Invalid Battery ID!!!')
         return
       }
-      
+
       if (!med[medicineId]) {
         alert('Battery data not found. Please wait for data to load.')
         return
       }
 
-      const stage = parseInt(med[medicineId].stage)
+      const stage = Number(med[medicineId].stage)
       setId(medicineId.toString())
-      
+
       if (stage === 5) setTrackTillSold(true)
       else if (stage === 4) setTrackTillRetail(true)
       else if (stage === 3) setTrackTillDistribution(true)
@@ -199,7 +199,7 @@ export default function Track() {
     stages,
   }: {
     title: string
-    stages: Array<{ label: string; data?: Role; showArrow?: boolean; icon?: JSX.Element }>
+    stages: Array<{ label: string; data?: Role; showArrow?: boolean; icon?: React.ReactNode }>
   }) => {
     const medicineId = parseInt(id)
     const batteryData = {
@@ -226,7 +226,7 @@ export default function Track() {
               </div>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <div className="text-sm text-purple-100 mb-1">Name</div>
@@ -251,11 +251,11 @@ export default function Track() {
             </svg>
             Supply Chain Journey
           </h4>
-          
+
           <div className="relative">
             {/* Timeline line */}
             <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-400 via-purple-400 to-pink-400 hidden md:block"></div>
-            
+
             <div className="space-y-8">
               {stages.map((stage, index) => (
                 <div key={index} className="relative flex items-start">
@@ -267,7 +267,7 @@ export default function Track() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Content card */}
                   <div className="ml-6 flex-1 bg-gray-50 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                     <h5 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
@@ -303,7 +303,7 @@ export default function Track() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Arrow connector */}
                   {stage.showArrow && index < stages.length - 1 && (
                     <div className="hidden md:block absolute left-8 top-16 w-0.5 h-8 bg-gradient-to-b from-purple-400 to-pink-400"></div>
@@ -325,8 +325,8 @@ export default function Track() {
             </h4>
             <div className="flex justify-center">
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200">
-                <QRCodeCanvas 
-                  value={JSON.stringify(batteryData)} 
+                <QRCodeCanvas
+                  value={JSON.stringify(batteryData)}
                   size={250}
                   level="H"
                   includeMargin={true}
@@ -395,8 +395,8 @@ export default function Track() {
               showArrow: true,
               icon: stageIcons.retail,
             },
-            { 
-              label: 'Sold to Consumer', 
+            {
+              label: 'Sold to Consumer',
               showArrow: false,
               icon: stageIcons.sold,
             },
@@ -616,7 +616,7 @@ export default function Track() {
               Total: {Object.keys(med).length} items
             </div>
           </div>
-          
+
           {Object.keys(med).length === 0 ? (
             <div className="text-center py-12">
               <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

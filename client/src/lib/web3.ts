@@ -1,4 +1,4 @@
-import Web3 from 'web3'
+import { Web3 } from 'web3'
 import { SupplyChainArtifact } from './contracts'
 
 declare global {
@@ -35,7 +35,7 @@ export const getContract = async () => {
 
   if (networkData && networkData.SupplyChain && networkData.SupplyChain.address) {
     const contract = new web3.eth.Contract(SupplyChainArtifact.abi as any, networkData.SupplyChain.address)
-    return { contract, account: accounts[0], web3 }
+    return { contract: contract as any, account: accounts[0], web3 }
   } else {
     // Get available networks from deployments
     const availableNetworks = Object.keys(deployments.networks).join(', ')
