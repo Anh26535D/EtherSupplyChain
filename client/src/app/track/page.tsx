@@ -9,10 +9,10 @@ interface Medicine {
   id: string
   name: string
   description: string
-  RMSid: string
-  MANid: string
-  DISid: string
-  RETid: string
+  rmsId: string
+  manId: string
+  disId: string
+  retId: string
   stage: string
 }
 
@@ -54,43 +54,43 @@ export default function Track() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const medCtr = Number(await contract.methods.medicineCtr().call())
+      const medCtr = Number(await contract.methods.medicineCount().call())
       const medData: { [key: number]: Medicine } = {}
       const medStageData: { [key: number]: string } = {}
 
       for (let i = 0; i < medCtr; i++) {
-        medData[i + 1] = await contract.methods.MedicineStock(i + 1).call()
-        medStageData[i + 1] = await contract.methods.showStage(i + 1).call()
+        medData[i + 1] = await contract.methods.medicines(i + 1).call()
+        medStageData[i + 1] = await contract.methods.getMedicineStage(i + 1).call()
       }
 
       setMed(medData)
       setMedStage(medStageData)
 
-      const rmsCtr = Number(await contract.methods.rmsCtr().call())
+      const rmsCtr = Number(await contract.methods.rmsCount().call())
       const rmsData: { [key: number]: Role } = {}
       for (let i = 0; i < rmsCtr; i++) {
-        rmsData[i + 1] = await contract.methods.RMS(i + 1).call()
+        rmsData[i + 1] = await contract.methods.rawMaterialSuppliers(i + 1).call()
       }
       setRMS(rmsData)
 
-      const manCtr = Number(await contract.methods.manCtr().call())
+      const manCtr = Number(await contract.methods.manufacturerCount().call())
       const manData: { [key: number]: Role } = {}
       for (let i = 0; i < manCtr; i++) {
-        manData[i + 1] = await contract.methods.MAN(i + 1).call()
+        manData[i + 1] = await contract.methods.manufacturers(i + 1).call()
       }
       setMAN(manData)
 
-      const disCtr = Number(await contract.methods.disCtr().call())
+      const disCtr = Number(await contract.methods.distributorCount().call())
       const disData: { [key: number]: Role } = {}
       for (let i = 0; i < disCtr; i++) {
-        disData[i + 1] = await contract.methods.DIS(i + 1).call()
+        disData[i + 1] = await contract.methods.distributors(i + 1).call()
       }
       setDIS(disData)
 
-      const retCtr = Number(await contract.methods.retCtr().call())
+      const retCtr = Number(await contract.methods.retailerCount().call())
       const retData: { [key: number]: Role } = {}
       for (let i = 0; i < retCtr; i++) {
-        retData[i + 1] = await contract.methods.RET(i + 1).call()
+        retData[i + 1] = await contract.methods.retailers(i + 1).call()
       }
       setRET(retData)
 
@@ -120,7 +120,7 @@ export default function Track() {
 
   const trackMedicine = async (medicineId: number) => {
     try {
-      const ctr = await supplyChain.methods.medicineCtr().call()
+      const ctr = await supplyChain.methods.medicineCount().call()
       if (!(medicineId > 0 && medicineId <= Number(ctr))) {
         alert('Invalid Battery ID!!!')
         return
@@ -373,25 +373,25 @@ export default function Track() {
           stages={[
             {
               label: 'Raw Materials Supplied by',
-              data: rms[parseInt(med[medicineId]?.RMSid)],
+              data: rms[parseInt(med[medicineId]?.rmsId)],
               showArrow: true,
               icon: stageIcons.rms,
             },
             {
               label: 'Manufactured by',
-              data: man[parseInt(med[medicineId]?.MANid)],
+              data: man[parseInt(med[medicineId]?.manId)],
               showArrow: true,
               icon: stageIcons.manufacture,
             },
             {
               label: 'Distributed by',
-              data: dis[parseInt(med[medicineId]?.DISid)],
+              data: dis[parseInt(med[medicineId]?.disId)],
               showArrow: true,
               icon: stageIcons.distribute,
             },
             {
               label: 'Retailed by',
-              data: ret[parseInt(med[medicineId]?.RETid)],
+              data: ret[parseInt(med[medicineId]?.retId)],
               showArrow: true,
               icon: stageIcons.retail,
             },
@@ -415,25 +415,25 @@ export default function Track() {
           stages={[
             {
               label: 'Raw Materials Supplied by',
-              data: rms[parseInt(med[medicineId]?.RMSid)],
+              data: rms[parseInt(med[medicineId]?.rmsId)],
               showArrow: true,
               icon: stageIcons.rms,
             },
             {
               label: 'Manufactured by',
-              data: man[parseInt(med[medicineId]?.MANid)],
+              data: man[parseInt(med[medicineId]?.manId)],
               showArrow: true,
               icon: stageIcons.manufacture,
             },
             {
               label: 'Distributed by',
-              data: dis[parseInt(med[medicineId]?.DISid)],
+              data: dis[parseInt(med[medicineId]?.disId)],
               showArrow: true,
               icon: stageIcons.distribute,
             },
             {
               label: 'Retailed by',
-              data: ret[parseInt(med[medicineId]?.RETid)],
+              data: ret[parseInt(med[medicineId]?.retId)],
               showArrow: false,
               icon: stageIcons.retail,
             },
@@ -452,19 +452,19 @@ export default function Track() {
           stages={[
             {
               label: 'Raw Materials Supplied by',
-              data: rms[parseInt(med[medicineId]?.RMSid)],
+              data: rms[parseInt(med[medicineId]?.rmsId)],
               showArrow: true,
               icon: stageIcons.rms,
             },
             {
               label: 'Manufactured by',
-              data: man[parseInt(med[medicineId]?.MANid)],
+              data: man[parseInt(med[medicineId]?.manId)],
               showArrow: true,
               icon: stageIcons.manufacture,
             },
             {
               label: 'Distributed by',
-              data: dis[parseInt(med[medicineId]?.DISid)],
+              data: dis[parseInt(med[medicineId]?.disId)],
               showArrow: false,
               icon: stageIcons.distribute,
             },
@@ -483,13 +483,13 @@ export default function Track() {
           stages={[
             {
               label: 'Raw Materials Supplied by',
-              data: rms[parseInt(med[medicineId]?.RMSid)],
+              data: rms[parseInt(med[medicineId]?.rmsId)],
               showArrow: true,
               icon: stageIcons.rms,
             },
             {
               label: 'Manufactured by',
-              data: man[parseInt(med[medicineId]?.MANid)],
+              data: man[parseInt(med[medicineId]?.manId)],
               showArrow: false,
               icon: stageIcons.manufacture,
             },
@@ -508,7 +508,7 @@ export default function Track() {
           stages={[
             {
               label: 'Raw Materials Supplied by',
-              data: rms[parseInt(med[medicineId]?.RMSid)],
+              data: rms[parseInt(med[medicineId]?.rmsId)],
               showArrow: false,
               icon: stageIcons.rms,
             },

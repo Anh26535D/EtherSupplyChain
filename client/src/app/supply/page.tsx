@@ -8,10 +8,10 @@ interface Medicine {
   id: string
   name: string
   description: string
-  RMSid: string
-  MANid: string
-  DISid: string
-  RETid: string
+  rmsId: string
+  manId: string
+  disId: string
+  retId: string
   stage: string
 }
 
@@ -40,13 +40,13 @@ export default function Supply() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const medCtr = Number(await contract.methods.medicineCtr().call())
+      const medCtr = Number(await contract.methods.medicineCount().call())
       const medData: { [key: number]: Medicine } = {}
       const medStageData: string[] = []
 
       for (let i = 0; i < medCtr; i++) {
-        medData[i] = await contract.methods.MedicineStock(i + 1).call()
-        medStageData[i] = await contract.methods.showStage(i + 1).call()
+        medData[i] = await contract.methods.medicines(i + 1).call()
+        medStageData[i] = await contract.methods.getMedicineStage(i + 1).call()
       }
 
       setMed(medData)
@@ -83,7 +83,7 @@ export default function Supply() {
   const handlerSubmitRMSsupply = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const receipt = await supplyChain.methods.RMSsupply(rmsId).send({ from: currentAccount })
+      const receipt = await supplyChain.methods.supplyRawMaterial(rmsId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()
         setRmsId('')
@@ -99,7 +99,7 @@ export default function Supply() {
 
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
+        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
           errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
         } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
           errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'
@@ -118,7 +118,7 @@ export default function Supply() {
   const handlerSubmitManufacturing = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const receipt = await supplyChain.methods.Manufacturing(manId).send({ from: currentAccount })
+      const receipt = await supplyChain.methods.manufacture(manId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()
         setManId('')
@@ -134,7 +134,7 @@ export default function Supply() {
 
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
+        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
           errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
         } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
           errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'
@@ -153,7 +153,7 @@ export default function Supply() {
   const handlerSubmitDistribute = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const receipt = await supplyChain.methods.Distribute(disId).send({ from: currentAccount })
+      const receipt = await supplyChain.methods.distribute(disId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()
         setDisId('')
@@ -169,7 +169,7 @@ export default function Supply() {
 
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
+        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
           errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
         } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
           errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'
@@ -188,7 +188,7 @@ export default function Supply() {
   const handlerSubmitRetail = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const receipt = await supplyChain.methods.Retail(retId).send({ from: currentAccount })
+      const receipt = await supplyChain.methods.retail(retId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()
         setRetId('')
@@ -204,7 +204,7 @@ export default function Supply() {
 
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
+        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
           errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
         } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
           errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'
@@ -223,7 +223,7 @@ export default function Supply() {
   const handlerSubmitSold = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const receipt = await supplyChain.methods.sold(soldId).send({ from: currentAccount })
+      const receipt = await supplyChain.methods.sell(soldId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()
         setSoldId('')
@@ -239,7 +239,7 @@ export default function Supply() {
 
       // Check for common revert reasons
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRMS') || errorMessage.includes('findMAN') || errorMessage.includes('findDIS') || errorMessage.includes('findRET')) {
+        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
           errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
         } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
           errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'

@@ -9,10 +9,10 @@ interface Medicine {
   id: string
   name: string
   description: string
-  RMSid: string
-  MANid: string
-  DISid: string
-  RETid: string
+  rmsId: string
+  manId: string
+  disId: string
+  retId: string
   stage: string
 }
 
@@ -47,23 +47,23 @@ export default function AddMed() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const medCtr = Number(await contract.methods.medicineCtr().call())
+      const medCtr = Number(await contract.methods.medicineCount().call())
       const medData: { [key: number]: Medicine } = {}
       const medStageData: string[] = []
 
       for (let i = 0; i < medCtr; i++) {
-        medData[i] = await contract.methods.MedicineStock(i + 1).call()
-        medStageData[i] = await contract.methods.showStage(i + 1).call()
+        medData[i] = await contract.methods.medicines(i + 1).call()
+        medStageData[i] = await contract.methods.getMedicineStage(i + 1).call()
       }
 
       setMed(medData)
       setMedStage(medStageData)
 
       // Check role counts
-      const rmsCount = await contract.methods.rmsCtr().call()
-      const manCount = await contract.methods.manCtr().call()
-      const disCount = await contract.methods.disCtr().call()
-      const retCount = await contract.methods.retCtr().call()
+      const rmsCount = await contract.methods.rmsCount().call()
+      const manCount = await contract.methods.manufacturerCount().call()
+      const disCount = await contract.methods.distributorCount().call()
+      const retCount = await contract.methods.retailerCount().call()
 
       setRoleCounts({
         rms: Number(rmsCount),
@@ -118,7 +118,7 @@ export default function AddMed() {
       if (errorMessage.includes('revert') || errorMessage.includes('require')) {
         if (errorMessage.includes('Owner')) {
           errorMessage = 'Only the contract owner can add materials. Make sure you are using the account that deployed the contract.'
-        } else if (errorMessage.includes('rmsCtr') || errorMessage.includes('manCtr') || errorMessage.includes('disCtr') || errorMessage.includes('retCtr')) {
+        } else if (errorMessage.includes('rmsCount') || errorMessage.includes('manufacturerCount') || errorMessage.includes('distributorCount') || errorMessage.includes('retailerCount')) {
           errorMessage = 'Please register at least one role of each type (RMS, Manufacturer, Distributor, Retailer) before adding materials.'
         } else {
           errorMessage = `Transaction failed: ${errorMessage}`
@@ -352,8 +352,8 @@ export default function AddMed() {
               type="submit"
               disabled={!isOwner || roleCounts.rms === 0 || roleCounts.man === 0 || roleCounts.dis === 0 || roleCounts.ret === 0 || isSubmitting}
               className={`w-full px-6 py-4 rounded-xl transition-all font-semibold text-lg flex items-center justify-center shadow-lg ${isOwner && roleCounts.rms > 0 && roleCounts.man > 0 && roleCounts.dis > 0 && roleCounts.ret > 0 && !isSubmitting
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 hover:shadow-xl transform hover:scale-105'
-                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 hover:shadow-xl transform hover:scale-105'
+                : 'bg-gray-400 text-gray-200 cursor-not-allowed'
                 }`}
             >
               {isSubmitting ? (

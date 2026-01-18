@@ -50,30 +50,30 @@ export default function AssignRoles() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const rmsCount = await contract.methods.rmsCtr().call()
-      const manCount = await contract.methods.manCtr().call()
-      const disCount = await contract.methods.disCtr().call()
-      const retCount = await contract.methods.retCtr().call()
+      const rmsCount = await contract.methods.rmsCount().call()
+      const manCount = await contract.methods.manufacturerCount().call()
+      const disCount = await contract.methods.distributorCount().call()
+      const retCount = await contract.methods.retailerCount().call()
 
       const rms = await Promise.all(
         Array(Number(rmsCount))
           .fill(null)
-          .map((_, i) => contract.methods.RMS(i + 1).call())
+          .map((_, i) => contract.methods.rawMaterialSuppliers(i + 1).call())
       )
       const man = await Promise.all(
         Array(Number(manCount))
           .fill(null)
-          .map((_, i) => contract.methods.MAN(i + 1).call())
+          .map((_, i) => contract.methods.manufacturers(i + 1).call())
       )
       const dis = await Promise.all(
         Array(Number(disCount))
           .fill(null)
-          .map((_, i) => contract.methods.DIS(i + 1).call())
+          .map((_, i) => contract.methods.distributors(i + 1).call())
       )
       const ret = await Promise.all(
         Array(Number(retCount))
           .fill(null)
-          .map((_, i) => contract.methods.RET(i + 1).call())
+          .map((_, i) => contract.methods.retailers(i + 1).call())
       )
 
       setRoles({ rms, man, dis, ret })
@@ -108,7 +108,7 @@ export default function AssignRoles() {
       let receipt
       switch (type) {
         case 'rms':
-          receipt = await supplyChain.methods.addRMS(address, name, place).send({ from: currentAccount })
+          receipt = await supplyChain.methods.addRawMaterialSupplier(address, name, place).send({ from: currentAccount })
           break
         case 'man':
           receipt = await supplyChain.methods.addManufacturer(address, name, place).send({ from: currentAccount })
@@ -124,7 +124,7 @@ export default function AssignRoles() {
           return
       }
       if (receipt) {
-        const event = receipt.events?.UserRegister
+        const event = receipt.events?.UserRegistered
         let message = ''
 
         if (event) {
