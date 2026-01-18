@@ -83,6 +83,12 @@ export default function Supply() {
   const handlerSubmitRMSsupply = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
+      const checkId = await supplyChain.methods.findRawMaterialSupplier(currentAccount).call()
+      if (Number(checkId) === 0) {
+        alert('You are not a registered Raw Material Supplier.')
+        return
+      }
+
       const receipt = await supplyChain.methods.supplyRawMaterial(rmsId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()
@@ -118,6 +124,11 @@ export default function Supply() {
   const handlerSubmitManufacturing = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
+      const checkId = await supplyChain.methods.findManufacturer(currentAccount).call()
+      if (Number(checkId) === 0) {
+        alert('You are not a registered Manufacturer.')
+        return
+      }
       const receipt = await supplyChain.methods.manufacture(manId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()
@@ -153,6 +164,11 @@ export default function Supply() {
   const handlerSubmitDistribute = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
+      const checkId = await supplyChain.methods.findDistributor(currentAccount).call()
+      if (Number(checkId) === 0) {
+        alert('You are not a registered Distributor.')
+        return
+      }
       const receipt = await supplyChain.methods.distribute(disId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()
@@ -188,6 +204,11 @@ export default function Supply() {
   const handlerSubmitRetail = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
+      const checkId = await supplyChain.methods.findRetailer(currentAccount).call()
+      if (Number(checkId) === 0) {
+        alert('You are not a registered Retailer.')
+        return
+      }
       const receipt = await supplyChain.methods.retail(retId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()
@@ -223,6 +244,11 @@ export default function Supply() {
   const handlerSubmitSold = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
+      const checkId = await supplyChain.methods.findRetailer(currentAccount).call()
+      if (Number(checkId) === 0) {
+        alert('You are not a registered Retailer.')
+        return
+      }
       const receipt = await supplyChain.methods.sell(soldId).send({ from: currentAccount })
       if (receipt) {
         loadBlockchainData()

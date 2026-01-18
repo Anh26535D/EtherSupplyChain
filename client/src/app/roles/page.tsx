@@ -105,6 +105,34 @@ export default function AssignRoles() {
     event.preventDefault()
     const { address, name, place, type } = newRole
     try {
+      let isRegistered = false
+      let checkId = '0'
+
+      switch (type) {
+        case 'rms':
+          checkId = await supplyChain.methods.findRawMaterialSupplier(address).call()
+          if (Number(checkId) > 0) isRegistered = true
+          break
+        case 'man':
+          checkId = await supplyChain.methods.findManufacturer(address).call()
+          if (Number(checkId) > 0) isRegistered = true
+          break
+        case 'dis':
+          checkId = await supplyChain.methods.findDistributor(address).call()
+          if (Number(checkId) > 0) isRegistered = true
+          break
+        case 'ret':
+          checkId = await supplyChain.methods.findRetailer(address).call()
+          if (Number(checkId) > 0) isRegistered = true
+          break
+      }
+
+      if (isRegistered) {
+        alert('This account is already registered for this role (Verified).')
+        setLoading(false)
+        return
+      }
+
       let receipt
       switch (type) {
         case 'rms':
