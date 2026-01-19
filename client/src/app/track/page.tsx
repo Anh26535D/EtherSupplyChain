@@ -58,8 +58,18 @@ export default function Track() {
       const medData: { [key: number]: Medicine } = {}
       const medStageData: { [key: number]: string } = {}
 
+      // Fetch off-chain data
+      const [medRes, roleRes] = await Promise.all([
+        fetch('/api/medicines'),
+        fetch('/api/roles')
+      ])
+      const offChainMeds = await medRes.json()
+      const offChainRoles = await roleRes.json()
+
       for (let i = 0; i < medCtr; i++) {
-        medData[i + 1] = await contract.methods.medicines(i + 1).call()
+        const chainMed = await contract.methods.medicines(i + 1).call()
+        const meta = offChainMeds[Number(chainMed.id)] || { name: 'Unknown', description: 'No data' }
+        medData[i + 1] = { ...chainMed, ...meta }
         medStageData[i + 1] = await contract.methods.getMedicineStage(i + 1).call()
       }
 
@@ -69,28 +79,36 @@ export default function Track() {
       const rmsCtr = Number(await contract.methods.rmsCount().call())
       const rmsData: { [key: number]: Role } = {}
       for (let i = 0; i < rmsCtr; i++) {
-        rmsData[i + 1] = await contract.methods.rawMaterialSuppliers(i + 1).call()
+        const role = await contract.methods.rawMaterialSuppliers(i + 1).call()
+        const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
+        rmsData[i + 1] = { ...role, ...meta }
       }
       setRMS(rmsData)
 
       const manCtr = Number(await contract.methods.manufacturerCount().call())
       const manData: { [key: number]: Role } = {}
       for (let i = 0; i < manCtr; i++) {
-        manData[i + 1] = await contract.methods.manufacturers(i + 1).call()
+        const role = await contract.methods.manufacturers(i + 1).call()
+        const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
+        manData[i + 1] = { ...role, ...meta }
       }
       setMAN(manData)
 
       const disCtr = Number(await contract.methods.distributorCount().call())
       const disData: { [key: number]: Role } = {}
       for (let i = 0; i < disCtr; i++) {
-        disData[i + 1] = await contract.methods.distributors(i + 1).call()
+        const role = await contract.methods.distributors(i + 1).call()
+        const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
+        disData[i + 1] = { ...role, ...meta }
       }
       setDIS(disData)
 
       const retCtr = Number(await contract.methods.retailerCount().call())
       const retData: { [key: number]: Role } = {}
       for (let i = 0; i < retCtr; i++) {
-        retData[i + 1] = await contract.methods.retailers(i + 1).call()
+        const role = await contract.methods.retailers(i + 1).call()
+        const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
+        retData[i + 1] = { ...role, ...meta }
       }
       setRET(retData)
 

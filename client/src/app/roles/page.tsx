@@ -55,26 +55,27 @@ export default function AssignRoles() {
       const disCount = await contract.methods.distributorCount().call()
       const retCount = await contract.methods.retailerCount().call()
 
-      const rms = await Promise.all(
-        Array(Number(rmsCount))
-          .fill(null)
-          .map((_, i) => contract.methods.rawMaterialSuppliers(i + 1).call())
-      )
-      const man = await Promise.all(
-        Array(Number(manCount))
-          .fill(null)
-          .map((_, i) => contract.methods.manufacturers(i + 1).call())
-      )
-      const dis = await Promise.all(
-        Array(Number(disCount))
-          .fill(null)
-          .map((_, i) => contract.methods.distributors(i + 1).call())
-      )
-      const ret = await Promise.all(
-        Array(Number(retCount))
-          .fill(null)
-          .map((_, i) => contract.methods.retailers(i + 1).call())
-      )
+      // Fetch off-chain data
+      const response = await fetch('/api/roles')
+      const offChainRoles = await response.json()
+
+      const fetchRoles = async (count: number, method: any) => {
+        return Promise.all(
+          Array(Number(count))
+            .fill(null)
+            .map(async (_, i) => {
+              const role = await method(i + 1).call()
+              // Assume role.addr is the address (from contract struct)
+              const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
+              return { ...role, ...meta }
+            })
+        )
+      }
+
+      const rms = await fetchRoles(rmsCount, contract.methods.rawMaterialSuppliers)
+      const man = await fetchRoles(manCount, contract.methods.manufacturers)
+      const dis = await fetchRoles(disCount, contract.methods.distributors)
+      const ret = await fetchRoles(retCount, contract.methods.retailers)
 
       setRoles({ rms, man, dis, ret })
 
@@ -133,19 +134,26 @@ export default function AssignRoles() {
         return
       }
 
+      // Save off-chain first
+      await fetch('/api/roles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, name, place, role: type })
+      })
+
       let receipt
       switch (type) {
         case 'rms':
-          receipt = await supplyChain.methods.addRawMaterialSupplier(address, name, place).send({ from: currentAccount })
+          receipt = await supplyChain.methods.addRawMaterialSupplier(address).send({ from: currentAccount })
           break
         case 'man':
-          receipt = await supplyChain.methods.addManufacturer(address, name, place).send({ from: currentAccount })
+          receipt = await supplyChain.methods.addManufacturer(address).send({ from: currentAccount })
           break
         case 'dis':
-          receipt = await supplyChain.methods.addDistributor(address, name, place).send({ from: currentAccount })
+          receipt = await supplyChain.methods.addDistributor(address).send({ from: currentAccount })
           break
         case 'ret':
-          receipt = await supplyChain.methods.addRetailer(address, name, place).send({ from: currentAccount })
+          receipt = await supplyChain.methods.addRetailer(address).send({ from: currentAccount })
           break
         default:
           alert('Invalid role type selected')

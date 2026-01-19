@@ -51,8 +51,15 @@ export default function AddMed() {
       const medData: { [key: number]: Medicine } = {}
       const medStageData: string[] = []
 
+      // Fetch off-chain data
+      const response = await fetch('/api/medicines')
+      const offChainData = await response.json()
+
       for (let i = 0; i < medCtr; i++) {
-        medData[i] = await contract.methods.medicines(i + 1).call()
+        const chainMed = await contract.methods.medicines(i + 1).call()
+        const meta = offChainData[Number(chainMed.id)] || { name: 'Unknown', description: 'No data' }
+
+        medData[i] = { ...chainMed, ...meta }
         medStageData[i] = await contract.methods.getMedicineStage(i + 1).call()
       }
 
@@ -99,8 +106,40 @@ export default function AddMed() {
     event.preventDefault()
     setIsSubmitting(true)
     try {
-      const receipt = await supplyChain.methods.addMedicine(medName, medDes).send({ from: currentAccount })
+      // Call contract without strings
+      const receipt = await supplyChain.methods.addMedicine().send({ from: currentAccount })
+
       if (receipt) {
+        // Extract ID from event
+        // Validating structure properly for Web3.js v4
+        let medicineId
+
+        // Try standard event structure
+        if (receipt.events?.StageChanged?.returnValues?.medicineId) {
+          medicineId = receipt.events.StageChanged.returnValues.medicineId
+        }
+        // Fallback for some provider responses
+        else if (receipt.logs) {
+          // We would need to parse logs here if events are missing, 
+          // but usually with successful tx on hardhat events are present.
+          // For simplicity, we assume events are captured or we fetch the latest ID.
+          const latestCount = await supplyChain.methods.medicineCount().call()
+          medicineId = latestCount
+        }
+
+        if (medicineId) {
+          // Save off-chain
+          await fetch('/api/medicines', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: Number(medicineId),
+              name: medName,
+              description: medDes
+            })
+          })
+        }
+
         loadBlockchainData()
         setMedName('')
         setMedDes('')

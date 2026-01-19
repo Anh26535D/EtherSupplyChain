@@ -44,8 +44,15 @@ export default function Supply() {
       const medData: { [key: number]: Medicine } = {}
       const medStageData: string[] = []
 
+      // Fetch off-chain data
+      const response = await fetch('/api/medicines')
+      const offChainData = await response.json()
+
       for (let i = 0; i < medCtr; i++) {
-        medData[i] = await contract.methods.medicines(i + 1).call()
+        const chainMed = await contract.methods.medicines(i + 1).call()
+        const meta = offChainData[Number(chainMed.id)] || { name: 'Unknown', description: 'No data' }
+
+        medData[i] = { ...chainMed, ...meta }
         medStageData[i] = await contract.methods.getMedicineStage(i + 1).call()
       }
 
