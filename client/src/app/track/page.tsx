@@ -69,7 +69,16 @@ export default function Track() {
         const chainMed = await contract.methods.medicines(i + 1).call()
         const meta = offChainMeds[Number(chainMed.id)] || { name: 'Unknown', description: 'No data' }
         medData[i + 1] = { ...chainMed, ...meta }
-        medStageData[i + 1] = await contract.methods.getMedicineStage(i + 1).call()
+
+        const Stage = [
+          'Ordered',
+          'Raw Material Supply',
+          'Manufacturing',
+          'Distribution',
+          'Retail',
+          'Sold'
+        ]
+        medStageData[i + 1] = Stage[Number(chainMed.stage)]
       }
 
       setMed(medData)

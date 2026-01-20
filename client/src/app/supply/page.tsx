@@ -43,7 +43,15 @@ export default function Supply() {
         const meta = offChainData[Number(chainMed.id)] || { name: 'Unknown', description: 'No data' }
 
         medData[i] = { ...chainMed, ...meta }
-        medStageData[i] = await contract.methods.getMedicineStage(i + 1).call()
+        const Stage = [
+          'Ordered',
+          'Raw Material Supply',
+          'Manufacturing',
+          'Distribution',
+          'Retail',
+          'Sold'
+        ]
+        medStageData[i] = Stage[Number(chainMed.stage)]
       }
 
       setMed(medData)
