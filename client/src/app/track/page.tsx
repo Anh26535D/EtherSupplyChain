@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
+import { getMedicineStageLabel } from '@/lib/constants'
+import { contractService } from '@/lib/contractService'
 import { ApiService } from '@/services/api'
 import { QRCodeCanvas } from 'qrcode.react'
 
@@ -55,7 +57,7 @@ export default function Track() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const medCtr = Number(await contract.methods.medicineCount().call())
+      const medCtr = await contractService.getMedicineCount(contract)
       const medData: { [key: number]: Medicine } = {}
       const medStageData: { [key: number]: string } = {}
 
@@ -66,55 +68,45 @@ export default function Track() {
       ])
 
       for (let i = 0; i < medCtr; i++) {
-        const chainMed = await contract.methods.medicines(i + 1).call()
+        const chainMed = await contractService.getMedicine(contract, i + 1)
         const meta = offChainMeds[Number(chainMed.id)] || { name: 'Unknown', description: 'No data' }
         medData[i + 1] = { ...chainMed, ...meta }
 
-        const Stage = [
-          'Ordered',
-          'Raw Material Supply',
-          'Manufacturing',
-          'Distribution',
-          'Retail',
-          'Sold'
-        ]
-        medStageData[i + 1] = Stage[Number(chainMed.stage)]
+        medStageData[i + 1] = getMedicineStageLabel(chainMed.stage)
       }
 
       setMed(medData)
       setMedStage(medStageData)
 
-      const rmsCtr = Number(await contract.methods.rmsCount().call())
+      const counts = await contractService.getRoleCounts(contract)
+
       const rmsData: { [key: number]: Role } = {}
-      for (let i = 0; i < rmsCtr; i++) {
-        const role = await contract.methods.rawMaterialSuppliers(i + 1).call()
+      for (let i = 0; i < counts.rms; i++) {
+        const role = await contractService.getRole(contract, 'rms', i + 1)
         const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
         rmsData[i + 1] = { ...role, ...meta }
       }
       setRMS(rmsData)
 
-      const manCtr = Number(await contract.methods.manufacturerCount().call())
       const manData: { [key: number]: Role } = {}
-      for (let i = 0; i < manCtr; i++) {
-        const role = await contract.methods.manufacturers(i + 1).call()
+      for (let i = 0; i < counts.man; i++) {
+        const role = await contractService.getRole(contract, 'man', i + 1)
         const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
         manData[i + 1] = { ...role, ...meta }
       }
       setMAN(manData)
 
-      const disCtr = Number(await contract.methods.distributorCount().call())
       const disData: { [key: number]: Role } = {}
-      for (let i = 0; i < disCtr; i++) {
-        const role = await contract.methods.distributors(i + 1).call()
+      for (let i = 0; i < counts.dis; i++) {
+        const role = await contractService.getRole(contract, 'dis', i + 1)
         const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
         disData[i + 1] = { ...role, ...meta }
       }
       setDIS(disData)
 
-      const retCtr = Number(await contract.methods.retailerCount().call())
       const retData: { [key: number]: Role } = {}
-      for (let i = 0; i < retCtr; i++) {
-        const role = await contract.methods.retailers(i + 1).call()
+      for (let i = 0; i < counts.ret; i++) {
+        const role = await contractService.getRole(contract, 'ret', i + 1)
         const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
         retData[i + 1] = { ...role, ...meta }
       }

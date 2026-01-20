@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
+import { getMedicineStageLabel } from '@/lib/constants'
+import { contractService } from '@/lib/contractService'
 import { ApiService } from '@/services/api'
 import { Medicine } from '@/types'
 
@@ -31,7 +33,7 @@ export default function Supply() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const medCtr = Number(await contract.methods.medicineCount().call())
+      const medCtr = await contractService.getMedicineCount(contract)
       const medData: { [key: number]: Medicine } = {}
       const medStageData: string[] = []
 
@@ -39,19 +41,11 @@ export default function Supply() {
       const offChainData = await ApiService.medicines.getAll()
 
       for (let i = 0; i < medCtr; i++) {
-        const chainMed = await contract.methods.medicines(i + 1).call()
+        const chainMed = await contractService.getMedicine(contract, i + 1)
         const meta = offChainData[Number(chainMed.id)] || { name: 'Unknown', description: 'No data' }
 
         medData[i] = { ...chainMed, ...meta }
-        const Stage = [
-          'Ordered',
-          'Raw Material Supply',
-          'Manufacturing',
-          'Distribution',
-          'Retail',
-          'Sold'
-        ]
-        medStageData[i] = Stage[Number(chainMed.stage)]
+        medStageData[i] = getMedicineStageLabel(chainMed.stage)
       }
 
       setMed(medData)
@@ -88,13 +82,13 @@ export default function Supply() {
   const handlerSubmitRMSsupply = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const checkId = await supplyChain.methods.findRawMaterialSupplier(currentAccount).call()
-      if (Number(checkId) === 0) {
+      const checkId = await contractService.findRawMaterialSupplier(supplyChain, currentAccount)
+      if (checkId === 0) {
         alert('You are not a registered Raw Material Supplier.')
         return
       }
 
-      const receipt = await supplyChain.methods.supplyRawMaterial(rmsId).send({ from: currentAccount })
+      const receipt = await contractService.supplyRawMaterial(supplyChain, currentAccount, rmsId)
       if (receipt) {
         loadBlockchainData()
         setRmsId('')
@@ -129,12 +123,12 @@ export default function Supply() {
   const handlerSubmitManufacturing = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const checkId = await supplyChain.methods.findManufacturer(currentAccount).call()
-      if (Number(checkId) === 0) {
+      const checkId = await contractService.findManufacturer(supplyChain, currentAccount)
+      if (checkId === 0) {
         alert('You are not a registered Manufacturer.')
         return
       }
-      const receipt = await supplyChain.methods.manufacture(manId).send({ from: currentAccount })
+      const receipt = await contractService.manufacture(supplyChain, currentAccount, manId)
       if (receipt) {
         loadBlockchainData()
         setManId('')
@@ -169,12 +163,12 @@ export default function Supply() {
   const handlerSubmitDistribute = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const checkId = await supplyChain.methods.findDistributor(currentAccount).call()
-      if (Number(checkId) === 0) {
+      const checkId = await contractService.findDistributor(supplyChain, currentAccount)
+      if (checkId === 0) {
         alert('You are not a registered Distributor.')
         return
       }
-      const receipt = await supplyChain.methods.distribute(disId).send({ from: currentAccount })
+      const receipt = await contractService.distribute(supplyChain, currentAccount, disId)
       if (receipt) {
         loadBlockchainData()
         setDisId('')
@@ -209,12 +203,12 @@ export default function Supply() {
   const handlerSubmitRetail = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const checkId = await supplyChain.methods.findRetailer(currentAccount).call()
-      if (Number(checkId) === 0) {
+      const checkId = await contractService.findRetailer(supplyChain, currentAccount)
+      if (checkId === 0) {
         alert('You are not a registered Retailer.')
         return
       }
-      const receipt = await supplyChain.methods.retail(retId).send({ from: currentAccount })
+      const receipt = await contractService.retail(supplyChain, currentAccount, retId)
       if (receipt) {
         loadBlockchainData()
         setRetId('')
@@ -249,12 +243,12 @@ export default function Supply() {
   const handlerSubmitSold = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const checkId = await supplyChain.methods.findRetailer(currentAccount).call()
-      if (Number(checkId) === 0) {
+      const checkId = await contractService.findRetailer(supplyChain, currentAccount)
+      if (checkId === 0) {
         alert('You are not a registered Retailer.')
         return
       }
-      const receipt = await supplyChain.methods.sell(soldId).send({ from: currentAccount })
+      const receipt = await contractService.sell(supplyChain, currentAccount, soldId)
       if (receipt) {
         loadBlockchainData()
         setSoldId('')

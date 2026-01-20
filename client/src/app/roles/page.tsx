@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
-import { checkIsOwner, getContractOwner } from '@/lib/contractUtils'
+import { contractService } from '@/lib/contractService'
 import { Role, RoleType } from '@/types'
 import { ApiService } from '@/services/api'
 
@@ -45,37 +45,35 @@ export default function AssignRoles() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const rmsCount = await contract.methods.rmsCount().call()
-      const manCount = await contract.methods.manufacturerCount().call()
-      const disCount = await contract.methods.distributorCount().call()
-      const retCount = await contract.methods.retailerCount().call()
+      const counts = await contractService.getRoleCounts(contract)
 
-      // Fetch off-chain data
+      // Fetch off-chain data as before
       const offChainRoles = await ApiService.roles.getAll()
 
-      const fetchRoles = async (count: number, method: any) => {
+      const fetchRoles = async (count: number, type: RoleType) => {
         return Promise.all(
-          Array(Number(count))
+          Array(count)
             .fill(null)
             .map(async (_, i) => {
-              const role = await method(i + 1).call()
+              const role = await contractService.getRole(contract, type, i + 1)
               const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
               return { ...role, ...meta }
             })
         )
       }
 
-      const rms = await fetchRoles(rmsCount, contract.methods.rawMaterialSuppliers)
-      const man = await fetchRoles(manCount, contract.methods.manufacturers)
-      const dis = await fetchRoles(disCount, contract.methods.distributors)
-      const ret = await fetchRoles(retCount, contract.methods.retailers)
+      const rms = await fetchRoles(counts.rms, 'rms')
+      const man = await fetchRoles(counts.man, 'man')
+      const dis = await fetchRoles(counts.dis, 'dis')
+      const ret = await fetchRoles(counts.ret, 'ret')
 
       setRoles({ rms, man, dis, ret })
 
       // Check if current account is the owner
-      const ownerStatus = await checkIsOwner()
+      // Check if current account is the owner
+      const ownerStatus = await contractService.checkIsOwner(contract, account)
       setIsOwner(ownerStatus)
-      const owner = await getContractOwner()
+      const owner = await contractService.getOwner(contract)
       if (owner) setContractOwner(owner)
 
       setLoading(false)
@@ -99,27 +97,7 @@ export default function AssignRoles() {
     event.preventDefault()
     const { address, name, place, type } = newRole
     try {
-      let isRegistered = false
-      let checkId = '0'
-
-      switch (type) {
-        case 'rms':
-          checkId = await supplyChain.methods.findRawMaterialSupplier(address).call()
-          if (Number(checkId) > 0) isRegistered = true
-          break
-        case 'man':
-          checkId = await supplyChain.methods.findManufacturer(address).call()
-          if (Number(checkId) > 0) isRegistered = true
-          break
-        case 'dis':
-          checkId = await supplyChain.methods.findDistributor(address).call()
-          if (Number(checkId) > 0) isRegistered = true
-          break
-        case 'ret':
-          checkId = await supplyChain.methods.findRetailer(address).call()
-          if (Number(checkId) > 0) isRegistered = true
-          break
-      }
+      const isRegistered = await contractService.checkRoleRegistered(supplyChain, type, address)
 
       if (isRegistered) {
         alert('This account is already registered for this role (Verified).')
@@ -130,24 +108,7 @@ export default function AssignRoles() {
       // Save off-chain first
       await ApiService.roles.create(address, name, place, type as RoleType)
 
-      let receipt
-      switch (type) {
-        case 'rms':
-          receipt = await supplyChain.methods.addRawMaterialSupplier(address).send({ from: currentAccount })
-          break
-        case 'man':
-          receipt = await supplyChain.methods.addManufacturer(address).send({ from: currentAccount })
-          break
-        case 'dis':
-          receipt = await supplyChain.methods.addDistributor(address).send({ from: currentAccount })
-          break
-        case 'ret':
-          receipt = await supplyChain.methods.addRetailer(address).send({ from: currentAccount })
-          break
-        default:
-          alert('Invalid role type selected')
-          return
-      }
+      const receipt = await contractService.addRole(supplyChain, currentAccount, type, address)
       if (receipt) {
         const event = receipt.events?.UserRegistered
         let message = ''

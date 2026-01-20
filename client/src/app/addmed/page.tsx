@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
 import { ApiService } from '@/services/api'
-import { checkIsOwner, getContractOwner } from '@/lib/contractUtils'
+import { contractService } from '@/lib/contractService'
+import { getMedicineStageLabel } from '@/lib/constants'
 
 interface Medicine {
   id: string
@@ -48,7 +49,7 @@ export default function AddMed() {
       setSupplyChain(contract)
       setCurrentAccount(account)
 
-      const medCtr = Number(await contract.methods.medicineCount().call())
+      const medCtr = await contractService.getMedicineCount(contract)
       const medData: { [key: number]: Medicine } = {}
       const medStageData: string[] = []
 
@@ -56,42 +57,30 @@ export default function AddMed() {
       const offChainData = await ApiService.medicines.getAll()
 
       for (let i = 0; i < medCtr; i++) {
-        const chainMed = await contract.methods.medicines(i + 1).call()
+        const chainMed = await contractService.getMedicine(contract, i + 1)
         const meta = offChainData[Number(chainMed.id)] || { name: 'Unknown', description: 'No data' }
 
         medData[i] = { ...chainMed, ...meta }
-
-        const Stage = [
-          'Ordered',
-          'Raw Material Supply',
-          'Manufacturing',
-          'Distribution',
-          'Retail',
-          'Sold'
-        ]
-        medStageData[i] = Stage[Number(chainMed.stage)]
+        medStageData[i] = getMedicineStageLabel(chainMed.stage)
       }
 
       setMed(medData)
       setMedStage(medStageData)
 
       // Check role counts
-      const rmsCount = await contract.methods.rmsCount().call()
-      const manCount = await contract.methods.manufacturerCount().call()
-      const disCount = await contract.methods.distributorCount().call()
-      const retCount = await contract.methods.retailerCount().call()
+      const counts = await contractService.getRoleCounts(contract)
 
       setRoleCounts({
-        rms: Number(rmsCount),
-        man: Number(manCount),
-        dis: Number(disCount),
-        ret: Number(retCount),
+        rms: counts.rms,
+        man: counts.man,
+        dis: counts.dis,
+        ret: counts.ret,
       })
 
       // Check if current account is the owner
-      const ownerStatus = await checkIsOwner()
+      const ownerStatus = await contractService.checkIsOwner(contract, account)
       setIsOwner(ownerStatus)
-      const owner = await getContractOwner()
+      const owner = await contractService.getOwner(contract)
       if (owner) setContractOwner(owner)
 
       setLoader(false)
@@ -116,7 +105,7 @@ export default function AddMed() {
     setIsSubmitting(true)
     try {
       // Call contract without strings
-      const receipt = await supplyChain.methods.addMedicine().send({ from: currentAccount })
+      const receipt = await contractService.addMedicine(supplyChain, currentAccount)
 
       if (receipt) {
         // Extract ID from event
@@ -132,7 +121,7 @@ export default function AddMed() {
           // We would need to parse logs here if events are missing, 
           // but usually with successful tx on hardhat events are present.
           // For simplicity, we assume events are captured or we fetch the latest ID.
-          const latestCount = await supplyChain.methods.medicineCount().call()
+          const latestCount = await contractService.getMedicineCount(supplyChain)
           medicineId = latestCount
         }
 
