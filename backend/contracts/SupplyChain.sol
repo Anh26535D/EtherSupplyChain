@@ -38,6 +38,13 @@ contract SupplyChain {
         Sold
     }
 
+    enum RoleType {
+        RawMaterialSupplier,
+        Manufacturer,
+        Distributor,
+        Retailer
+    }
+
     uint256 public medicineCount = 0;
     uint256 public rmsCount = 0;
     uint256 public manufacturerCount = 0;
@@ -54,117 +61,93 @@ contract SupplyChain {
         uint256 timestamp;
     }
 
+    struct RoleData {
+        address addr;
+        uint256 id;
+    }
+
+
     mapping(uint256 => Medicine) public medicines;
 
-    function getMedicineStage(
-        uint256 _medicineID
-    ) public view returns (string memory) {
-        if (medicineCount == 0) revert("No medicines registered");
-        if (_medicineID == 0 || _medicineID > medicineCount)
-            revert InvalidMedicineID(_medicineID);
+    mapping(uint256 => RoleData) public rawMaterialSuppliers;
+    mapping(address => uint256) public rawMaterialSupplierIds;
 
-        Stage stage = medicines[_medicineID].stage;
+    mapping(uint256 => RoleData) public manufacturers;
+    mapping(address => uint256) public manufacturerIds;
 
-        if (stage == Stage.Init) return "Medicine Ordered";
-        else if (stage == Stage.RawMaterialSupply)
-            return "Raw Material Supply Stage";
-        else if (stage == Stage.Manufacture) return "Manufacturing Stage";
-        else if (stage == Stage.Distribution) return "Distribution Stage";
-        else if (stage == Stage.Retail) return "Retail Stage";
-        else if (stage == Stage.Sold) return "Medicine Sold";
+    mapping(uint256 => RoleData) public distributors;
+    mapping(address => uint256) public distributorIds;
+
+    mapping(uint256 => RoleData) public retailers;
+    mapping(address => uint256) public retailerIds;
+
+    function _getRoleName(RoleType _role) private pure returns (string memory) {
+        if (_role == RoleType.RawMaterialSupplier)
+            return "Raw Material Supplier";
+        if (_role == RoleType.Manufacturer) return "Manufacturer";
+        if (_role == RoleType.Distributor) return "Distributor";
+        if (_role == RoleType.Retailer) return "Retailer";
         return "";
     }
 
-    struct RawMaterialSupplier {
-        address addr;
-        uint256 id;
+    function _addRole(
+        mapping(address => uint256) storage _roleIds,
+        mapping(uint256 => RoleData) storage _roles,
+        uint256 _count,
+        address _address,
+        RoleType _role
+    ) private {
+        string memory roleName = _getRoleName(_role);
+        if (_roleIds[_address] > 0) revert RoleAlreadyRegistered(roleName);
+
+        _roles[_count] = RoleData(_address, _count);
+        _roleIds[_address] = _count;
+
+        emit UserRegistered(_address, roleName, "Registered Successfully");
     }
-
-    mapping(uint256 => RawMaterialSupplier) public rawMaterialSuppliers;
-    mapping(address => uint256) public rawMaterialSupplierIds;
-
-    struct Manufacturer {
-        address addr;
-        uint256 id;
-    }
-
-    mapping(uint256 => Manufacturer) public manufacturers;
-    mapping(address => uint256) public manufacturerIds;
-
-    struct Distributor {
-        address addr;
-        uint256 id;
-    }
-
-    mapping(uint256 => Distributor) public distributors;
-    mapping(address => uint256) public distributorIds;
-
-    struct Retailer {
-        address addr;
-        uint256 id;
-    }
-
-    mapping(uint256 => Retailer) public retailers;
-    mapping(address => uint256) public retailerIds;
 
     function addRawMaterialSupplier(address _address) public onlyOwner {
-        if (rawMaterialSupplierIds[_address] > 0)
-            revert RoleAlreadyRegistered("Raw Material Supplier");
-
         rmsCount++;
-        rawMaterialSuppliers[rmsCount] = RawMaterialSupplier(
+        _addRole(
+            rawMaterialSupplierIds,
+            rawMaterialSuppliers,
+            rmsCount,
             _address,
-            rmsCount
-        );
-        rawMaterialSupplierIds[_address] = rmsCount;
-
-        emit UserRegistered(
-            _address,
-            "Raw Material Supplier",
-            "Registered Successfully"
+            RoleType.RawMaterialSupplier
         );
     }
 
     function addManufacturer(address _address) public onlyOwner {
-        if (manufacturerIds[_address] > 0)
-            revert RoleAlreadyRegistered("Manufacturer");
-
         manufacturerCount++;
-        manufacturers[manufacturerCount] = Manufacturer(
+        _addRole(
+            manufacturerIds,
+            manufacturers,
+            manufacturerCount,
             _address,
-            manufacturerCount
-        );
-        manufacturerIds[_address] = manufacturerCount;
-
-        emit UserRegistered(
-            _address,
-            "Manufacturer",
-            "Registered Successfully"
+            RoleType.Manufacturer
         );
     }
 
     function addDistributor(address _address) public onlyOwner {
-        if (distributorIds[_address] > 0)
-            revert RoleAlreadyRegistered("Distributor");
-
         distributorCount++;
-        distributors[distributorCount] = Distributor(
+        _addRole(
+            distributorIds,
+            distributors,
+            distributorCount,
             _address,
-            distributorCount
+            RoleType.Distributor
         );
-        distributorIds[_address] = distributorCount;
-
-        emit UserRegistered(_address, "Distributor", "Registered Successfully");
     }
 
     function addRetailer(address _address) public onlyOwner {
-        if (retailerIds[_address] > 0) revert RoleAlreadyRegistered("Retailer");
-
         retailerCount++;
-        retailers[retailerCount] = Retailer(_address, retailerCount);
-        retailerIds[_address] = retailerCount;
-
-        emit UserRegistered(_address, "Retailer", "Registered Successfully");
+        _addRole(
+            retailerIds,
+            retailers,
+            retailerCount,
+            _address,
+            RoleType.Retailer
+        );
     }
 
     function supplyRawMaterial(uint256 _medicineID) public {

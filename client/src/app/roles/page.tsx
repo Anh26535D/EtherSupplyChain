@@ -4,13 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
 import { checkIsOwner, getContractOwner } from '@/lib/contractUtils'
-
-interface Role {
-  addr: string
-  id: string
-  name: string
-  place: string
-}
+import { Role, RoleType } from '@/types'
+import { ApiService } from '@/services/api'
 
 export default function AssignRoles() {
   const router = useRouter()
@@ -56,8 +51,7 @@ export default function AssignRoles() {
       const retCount = await contract.methods.retailerCount().call()
 
       // Fetch off-chain data
-      const response = await fetch('/api/roles')
-      const offChainRoles = await response.json()
+      const offChainRoles = await ApiService.roles.getAll()
 
       const fetchRoles = async (count: number, method: any) => {
         return Promise.all(
@@ -134,11 +128,7 @@ export default function AssignRoles() {
       }
 
       // Save off-chain first
-      await fetch('/api/roles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address, name, place, role: type })
-      })
+      await ApiService.roles.create(address, name, place, type as RoleType)
 
       let receipt
       switch (type) {

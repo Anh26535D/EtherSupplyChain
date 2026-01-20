@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
+import { ApiService } from '@/services/api'
 import { QRCodeCanvas } from 'qrcode.react'
 
 interface Medicine {
@@ -59,12 +60,10 @@ export default function Track() {
       const medStageData: { [key: number]: string } = {}
 
       // Fetch off-chain data
-      const [medRes, roleRes] = await Promise.all([
-        fetch('/api/medicines'),
-        fetch('/api/roles')
+      const [offChainMeds, offChainRoles] = await Promise.all([
+        ApiService.medicines.getAll(),
+        ApiService.roles.getAll()
       ])
-      const offChainMeds = await medRes.json()
-      const offChainRoles = await roleRes.json()
 
       for (let i = 0; i < medCtr; i++) {
         const chainMed = await contract.methods.medicines(i + 1).call()

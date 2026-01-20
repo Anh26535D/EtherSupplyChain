@@ -3,17 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
-
-interface Medicine {
-  id: string
-  name: string
-  description: string
-  rmsId: string
-  manId: string
-  disId: string
-  retId: string
-  stage: string
-}
+import { ApiService } from '@/services/api'
+import { Medicine } from '@/types'
 
 export default function Supply() {
   const router = useRouter()
@@ -45,8 +36,7 @@ export default function Supply() {
       const medStageData: string[] = []
 
       // Fetch off-chain data
-      const response = await fetch('/api/medicines')
-      const offChainData = await response.json()
+      const offChainData = await ApiService.medicines.getAll()
 
       for (let i = 0; i < medCtr; i++) {
         const chainMed = await contract.methods.medicines(i + 1).call()

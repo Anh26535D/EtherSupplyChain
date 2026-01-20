@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
+import { ApiService } from '@/services/api'
 import { checkIsOwner, getContractOwner } from '@/lib/contractUtils'
 
 interface Medicine {
@@ -52,8 +53,7 @@ export default function AddMed() {
       const medStageData: string[] = []
 
       // Fetch off-chain data
-      const response = await fetch('/api/medicines')
-      const offChainData = await response.json()
+      const offChainData = await ApiService.medicines.getAll()
 
       for (let i = 0; i < medCtr; i++) {
         const chainMed = await contract.methods.medicines(i + 1).call()
@@ -129,15 +129,7 @@ export default function AddMed() {
 
         if (medicineId) {
           // Save off-chain
-          await fetch('/api/medicines', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: Number(medicineId),
-              name: medName,
-              description: medDes
-            })
-          })
+          await ApiService.medicines.create(Number(medicineId), medName, medDes)
         }
 
         loadBlockchainData()
