@@ -65,7 +65,6 @@ export default function AssignRoles() {
             .fill(null)
             .map(async (_, i) => {
               const role = await method(i + 1).call()
-              // Assume role.addr is the address (from contract struct)
               const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
               return { ...role, ...meta }
             })

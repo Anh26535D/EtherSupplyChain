@@ -46,8 +46,6 @@ contract SupplyChain {
 
     struct Medicine {
         uint256 id;
-        // string name; // MOVED OFF-CHAIN
-        // string description; // MOVED OFF-CHAIN
         uint256 rmsId;
         uint256 manId;
         uint256 disId;
@@ -81,8 +79,6 @@ contract SupplyChain {
         address addr;
         uint256 id;
     }
-    // string name; // MOVED OFF-CHAIN
-    // string place; // MOVED OFF-CHAIN
 
     mapping(uint256 => RawMaterialSupplier) public rawMaterialSuppliers;
     mapping(address => uint256) public rawMaterialSupplierIds;
@@ -91,8 +87,6 @@ contract SupplyChain {
         address addr;
         uint256 id;
     }
-    // string name; // MOVED OFF-CHAIN
-    // string place; // MOVED OFF-CHAIN
 
     mapping(uint256 => Manufacturer) public manufacturers;
     mapping(address => uint256) public manufacturerIds;
@@ -101,8 +95,6 @@ contract SupplyChain {
         address addr;
         uint256 id;
     }
-    // string name; // MOVED OFF-CHAIN
-    // string place; // MOVED OFF-CHAIN
 
     mapping(uint256 => Distributor) public distributors;
     mapping(address => uint256) public distributorIds;
@@ -111,13 +103,10 @@ contract SupplyChain {
         address addr;
         uint256 id;
     }
-    // string name; // MOVED OFF-CHAIN
-    // string place; // MOVED OFF-CHAIN
 
     mapping(uint256 => Retailer) public retailers;
     mapping(address => uint256) public retailerIds;
 
-    // Modified: No name/place args
     function addRawMaterialSupplier(address _address) public onlyOwner {
         if (rawMaterialSupplierIds[_address] > 0)
             revert RoleAlreadyRegistered("Raw Material Supplier");
@@ -136,7 +125,6 @@ contract SupplyChain {
         );
     }
 
-    // Modified: No name/place args
     function addManufacturer(address _address) public onlyOwner {
         if (manufacturerIds[_address] > 0)
             revert RoleAlreadyRegistered("Manufacturer");
@@ -155,7 +143,6 @@ contract SupplyChain {
         );
     }
 
-    // Modified: No name/place args
     function addDistributor(address _address) public onlyOwner {
         if (distributorIds[_address] > 0)
             revert RoleAlreadyRegistered("Distributor");
@@ -170,7 +157,6 @@ contract SupplyChain {
         emit UserRegistered(_address, "Distributor", "Registered Successfully");
     }
 
-    // Modified: No name/place args
     function addRetailer(address _address) public onlyOwner {
         if (retailerIds[_address] > 0) revert RoleAlreadyRegistered("Retailer");
 
@@ -308,7 +294,6 @@ contract SupplyChain {
         emit StageChanged(_medicineID, Stage.Sold, msg.sender, block.timestamp);
     }
 
-    // Modified: No name/description args
     function addMedicine() public onlyOwner {
         if (rmsCount == 0) revert SupplyChainNotReady("Raw Material Supplier");
         if (manufacturerCount == 0) revert SupplyChainNotReady("Manufacturer");
@@ -318,7 +303,6 @@ contract SupplyChain {
         medicineCount++;
         medicines[medicineCount] = Medicine(
             medicineCount,
-            // name/desc removed
             0,
             0,
             0,
