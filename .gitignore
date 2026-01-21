@@ -42,3 +42,4 @@ backend/artifacts/
 *.log
 
 accounts.txt
+client/db.json
