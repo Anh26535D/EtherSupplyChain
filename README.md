@@ -34,7 +34,6 @@ Watch the demo video: [Canva Design Demo](https://www.canva.com/design/DAFb-i9v_
 - [Running the Project](#-running-the-project)
 - [Usage Guide](#-usage-guide)
 - [Smart Contract Details](#-smart-contract-details)
-- [Contributing](#-contributing)
 - [License](#-license)
 
 ## 🎯 Overview
@@ -121,7 +120,7 @@ Before you begin, ensure you have the following installed:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/faizack619/Supply-Chain-Blockchain.git
+git clone https://github.com/Anh26535D/EtherSupplyChain.git
 cd Supply-Chain-Blockchain
 ```
 
@@ -279,23 +278,6 @@ The `SupplyChain.sol` smart contract implements a comprehensive supply chain man
 - `showStage()`: Get current stage of a product
 
 ![Smart Contract Flow](https://raw.githubusercontent.com/faizack619/Supply-Chain-Gode-Blockchain/master/client/public/Supply%20Chain%20Design%20(1).png)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Contribution Guidelines
-
-- Follow the existing code style
-- Write clear commit messages
-- Add tests for new features
-- Update documentation as needed
 
 ## 📄 License
 
