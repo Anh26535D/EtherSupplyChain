@@ -1,16 +1,14 @@
-# Supply Chain Blockchain
+# Supply Chain Blockchain - Backend
 
-A blockchain-based supply chain management system built with Hardhat, Next.js, TypeScript, and Tailwind CSS.
+The smart contract and deployment infrastructure for the Supply Chain Management System.
 
 ## Project Structure
 
 ```
-Supply-Chain-Blockchain/
+backend/
 ├── contracts/          # Solidity smart contracts
 ├── scripts/            # Hardhat deployment scripts
-├── ignition/           # Hardhat Ignition modules
 ├── test/               # Test files
-├── client/             # Next.js frontend application
 └── hardhat.config.ts   # Hardhat configuration
 ```
 
@@ -18,113 +16,68 @@ Supply-Chain-Blockchain/
 
 - Node.js 18+
 - npm
-- MetaMask browser extension
 
-## Installation
+## Getting Started
 
-1. Install root dependencies:
+1. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Install client dependencies:
-```bash
-cd client
-npm install
-```
-
-## Smart Contract Development
-
-### Compile Contracts
-
+2. Compile contracts:
 ```bash
 npm run compile
 ```
 
-### Deploy Contracts
+## Deployment
 
-Deploy to Hardhat Network (default):
+The deployment script (`scripts/deploy.ts`) automatically deploys the `SupplyChain` contract and updates the frontend configuration at `../client/src/deployments.json`.
+
+### Option 1: Ephemeral Local Network (Hardhat Network)
+
+This spins up a temporary network, deploys, and destroys it after completion. Useful for quick checks.
+
 ```bash
 npm run deploy
 ```
 
-Deploy to local Hardhat node:
-```bash
-# Terminal 1: Start Hardhat node
-npm run node
+### Option 2: Persistent Local Node (Recommended for Development)
 
-# Terminal 2: Deploy to localhost
+1. Start the Hardhat node in a dedicated terminal:
+```bash
+npm run node
+```
+This will start a local blockchain on `http://127.0.0.1:8545` (Chain ID 1337) with pre-funded accounts.
+
+2. Open a new terminal and deploy:
+```bash
 npm run deploy:local
 ```
 
+**Note:** The deployment script will detect the network and automatically write the address to `../client/src/deployments.json`. You do **not** need to manually update the frontend configuration.
 
+## Testing
 
-After deployment, update `client/src/deployments.json` with the deployed contract address.
-
-### Run Tests
-
+Run the test suite:
 ```bash
 npm test
 ```
 
-## Frontend Development
+## Features (Smart Contract)
 
-1. Navigate to the client directory:
-```bash
-cd client
-```
-
-2. Start the development server:
-```bash
-npm run dev
-```
-
-3. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Configuration
-
-### Hardhat Networks
-
-The project is configured with the following networks:
-- `hardhat`: Local Hardhat Network (chainId: 1337)
-- `localhost`: Connect to a running Hardhat node (chainId: 1337)
-
-
-### Contract Deployment
-
-After deploying the contract, you need to update the deployment address in `client/src/deployments.json`:
-
-```json
-{
-  "networks": {
-    "1337": {
-      "SupplyChain": {
-        "address": "0xYourDeployedAddress"
-      }
-    }
-  }
-}
-```
-
-## Features
-
-- **Register Roles**: Assign roles (Raw Material Supplier, Manufacturer, Distributor, Retailer)
-- **Order Materials**: Add new medicine orders
-- **Supply Materials**: Manage supply chain flow
-- **Track Materials**: Track medicine through the supply chain with QR codes
+- **Role Management**: Add Raw Material Suppliers, Manufacturers, Distributors, and Retailers.
+- **Medicine Flow**:
+  - `addOrder`: Manufacturers order raw materials.
+  - `approveOrder`: Suppliers approve orders.
+  - `startProduction`, `finishProduction`: Manufacturing lifecycle.
+  - `startShipping`, `receiveShipping`: Logistics tracking between stages.
 
 ## Technology Stack
 
-### Smart Contracts
 - **Hardhat**: Development environment
 - **Solidity**: Smart contract language
-- **TypeScript**: Type-safe development
-
-### Frontend
-- **Next.js 14**: React framework with App Router
-- **TypeScript**: Type-safe development
-- **Tailwind CSS**: Utility-first CSS framework
-- **Web3.js**: Ethereum blockchain interaction
+- **TypeScript**: Deployment scripts and tests
+- **Ethers.js**: Blockchain interaction
 
 ## License
 
