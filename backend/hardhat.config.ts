@@ -26,6 +26,16 @@ const config: HardhatUserConfig = {
       chainId: 1337,
     },
   },
+  gasReporter: {
+    enabled: true,
+    currency: 'USD',
+    outputFile: 'gas-report.txt',
+    noColors: true,
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY, // Needs API key for live data
+    // @ts-ignore
+    ethPrice: "2900", // Hardcoded fallback price (if no API key)
+    gasPrice: 20 // Hardcoded gas price in Gwei
+  },
 }
 
 export default config
