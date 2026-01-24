@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
-import { getMedicineStageLabel } from '@/lib/constants'
+import { getMedicineStageLabel, STAGE } from '@/lib/constants'
 import { contractService } from '@/lib/contractService'
 import { ApiService } from '@/services/api'
 import { QRCodeCanvas } from 'qrcode.react'
@@ -660,12 +660,12 @@ export default function Track() {
                     const medicineId = parseInt(key)
                     const stage = medStage[medicineId]
                     const getStageColor = (stage: string) => {
-                      if (stage.includes('Ordered')) return 'bg-blue-100 text-blue-700'
-                      if (stage.includes('Raw Material')) return 'bg-green-100 text-green-700'
-                      if (stage.includes('Manufacturing')) return 'bg-yellow-100 text-yellow-700'
-                      if (stage.includes('Distribution')) return 'bg-purple-100 text-purple-700'
-                      if (stage.includes('Retail')) return 'bg-orange-100 text-orange-700'
-                      if (stage.includes('Sold')) return 'bg-gray-100 text-gray-700'
+                      if (stage === STAGE.Ordered) return 'bg-blue-100 text-blue-700'
+                      if (stage === STAGE.RawMaterialSupply) return 'bg-green-100 text-green-700'
+                      if (stage === STAGE.Manufacturing) return 'bg-yellow-100 text-yellow-700'
+                      if (stage === STAGE.Distribution) return 'bg-purple-100 text-purple-700'
+                      if (stage === STAGE.Retail) return 'bg-orange-100 text-orange-700'
+                      if (stage === STAGE.Sold) return 'bg-gray-100 text-gray-700'
                       return 'bg-gray-100 text-gray-700'
                     }
                     return (
