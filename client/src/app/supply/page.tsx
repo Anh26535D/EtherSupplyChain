@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadWeb3, getContract } from '@/lib/web3'
-import { getMedicineStageLabel } from '@/lib/constants'
+import { getMedicineStageLabel, STAGE } from '@/lib/constants'
 import { contractService } from '@/lib/contractService'
 import { ApiService } from '@/services/api'
 import { Medicine } from '@/types'
+import Web3 from 'web3' // Use Web3 for utilities
 
 export default function Supply() {
   const router = useRouter()
@@ -15,16 +16,27 @@ export default function Supply() {
   const [supplyChain, setSupplyChain] = useState<any>(null)
   const [med, setMed] = useState<{ [key: number]: Medicine }>({})
   const [medStage, setMedStage] = useState<string[]>([])
+
+  // Inputs
   const [rmsId, setRmsId] = useState('')
-  const [manId, setManId] = useState('')
-  const [disId, setDisId] = useState('')
-  const [retId, setRetId] = useState('')
-  const [soldId, setSoldId] = useState('')
+  const [rmsPrice, setRmsPrice] = useState('') // New
+
+
+
+  // Common Management Inputs
+  const [manageId, setManageId] = useState('')
+  const [newPrice, setNewPrice] = useState('')
+  const [disputeReason, setDisputeReason] = useState('')
+  const [debugMode, setDebugMode] = useState(true)
 
   useEffect(() => {
     loadWeb3()
     loadBlockchainData()
   }, [])
+
+  useEffect(() => {
+    contractService.setDebugMode(debugMode)
+  }, [debugMode])
 
   const loadBlockchainData = async () => {
     try {
@@ -44,6 +56,7 @@ export default function Supply() {
         const chainMed = await contractService.getMedicine(contract, i + 1)
         const meta = offChainData[Number(chainMed.id)] || { name: 'Unknown', description: 'No data' }
 
+        // chainMed now includes price, seller, buyer, isDisputed
         medData[i] = { ...chainMed, ...meta }
         medStageData[i] = getMedicineStageLabel(chainMed.stage)
       }
@@ -59,234 +72,216 @@ export default function Supply() {
     }
   }
 
-  const handlerChangeRMSId = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRmsId(event.target.value)
+  const handlerChangeRMSId = (event: React.ChangeEvent<HTMLInputElement>) => setRmsId(event.target.value)
+  const handlerChangeRMSPrice = (event: React.ChangeEvent<HTMLInputElement>) => setRmsPrice(event.target.value)
+
+
+
+  const handlerChangeManageId = (event: React.ChangeEvent<HTMLInputElement>) => setManageId(event.target.value)
+  const handlerChangeNewPrice = (event: React.ChangeEvent<HTMLInputElement>) => setNewPrice(event.target.value)
+  const handlerChangeDisputeReason = (event: React.ChangeEvent<HTMLInputElement>) => setDisputeReason(event.target.value)
+
+  const handlerSubmitRaiseDispute = async (event: React.FormEvent, id: string | null = null) => {
+    event.preventDefault()
+    const targetId = id || manageId
+    try {
+      const receipt = await contractService.raiseDispute(supplyChain, currentAccount, targetId, disputeReason)
+      if (receipt) {
+        loadBlockchainData()
+        setManageId('')
+        setDisputeReason('')
+        alert('Dispute raised successfully! Funds are now locked.')
+      }
+    } catch (err: any) {
+      const msg = err.message || err.toString()
+      alert('Error raising dispute: ' + msg)
+    }
   }
 
-  const handlerChangeManId = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setManId(event.target.value)
-  }
+  const handlerSubmitResolveDispute = async (refundBuyer: boolean) => {
+    try {
+      const isOwner = await contractService.checkIsOwner(supplyChain, currentAccount)
+      if (!isOwner) {
+        alert('Only the contract owner can resolve disputes.')
+        return
+      }
 
-  const handlerChangeDisId = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setDisId(event.target.value)
-  }
-
-  const handlerChangeRetId = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRetId(event.target.value)
-  }
-
-  const handlerChangeSoldId = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSoldId(event.target.value)
+      const receipt = await contractService.resolveDispute(supplyChain, currentAccount, manageId, refundBuyer)
+      if (receipt) {
+        loadBlockchainData()
+        setManageId('')
+        alert(`Dispute resolved! Funds ${refundBuyer ? 'returned to Buyer' : 'released to Seller'}.`)
+      }
+    } catch (err: any) {
+      const msg = err.message || err.toString()
+      alert('Error resolving dispute: ' + msg)
+    }
   }
 
   const handlerSubmitRMSsupply = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
+      // 1. Check Role
       const checkId = await contractService.findRawMaterialSupplier(supplyChain, currentAccount)
       if (checkId === 0) {
-        alert('You are not a registered Raw Material Supplier.')
+        alert('You are not a registered Raw Material Supplier. Please register in the Roles page first.')
         return
       }
 
-      const receipt = await contractService.supplyRawMaterial(supplyChain, currentAccount, rmsId)
+      // 2. Check Order Existence (Protection against Gas Limit Error)
+      const count = await contractService.getMedicineCount(supplyChain)
+      if (Number(rmsId) > count || Number(rmsId) <= 0) {
+        alert(`Medicine ID ${rmsId} does not exist. Please create an Order in "Order Materials" page first.`)
+        return
+      }
+
+      // 3. Check Stage (Optional but good UX)
+      try {
+        const med = await contractService.getMedicine(supplyChain, Number(rmsId))
+        if (Number(med.stage) !== 0) { // Stage.Init = 0
+          alert(`Medicine ID ${rmsId} is not in 'Ordered' stage. Current stage: ${med.stage}`)
+          return
+        }
+      } catch (e) {
+        // Ignore if fetch fails, let contract handle it
+      }
+
+      const priceWei = Web3.utils.toWei(rmsPrice, 'ether')
+      const receipt = await contractService.supplyRawMaterial(supplyChain, currentAccount, rmsId, priceWei)
       if (receipt) {
         loadBlockchainData()
         setRmsId('')
+        setRmsPrice('')
         alert('Raw materials supplied successfully!')
       }
     } catch (err: any) {
-      let errorMessage = 'An error occurred!'
-      if (err?.message) {
-        errorMessage = err.message
-      } else if (err?.error?.message) {
-        errorMessage = err.error.message
-      }
-
-      // Check for common revert reasons
-      if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
-          errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
-        } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
-          errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'
-        } else if (errorMessage.includes('medicineID') || errorMessage.includes('_medicineID')) {
-          errorMessage = 'Invalid medicine ID. Please check the medicine ID and try again.'
-        } else {
-          errorMessage = `Transaction failed: ${errorMessage}`
-        }
-      }
-
-      console.error('Transaction error:', err)
-      alert(errorMessage)
+      handleError(err)
     }
   }
 
-  const handlerSubmitManufacturing = async (event: React.FormEvent) => {
+  const handlerSubmitPurchase = async (event: React.FormEvent, id: string, roleCheckFn: any, roleName: string) => {
     event.preventDefault()
     try {
-      const checkId = await contractService.findManufacturer(supplyChain, currentAccount)
-      if (checkId === 0) {
-        alert('You are not a registered Manufacturer.')
-        return
-      }
-      const receipt = await contractService.manufacture(supplyChain, currentAccount, manId)
-      if (receipt) {
-        loadBlockchainData()
-        setManId('')
-        alert('Manufacturing completed successfully!')
-      }
-    } catch (err: any) {
-      let errorMessage = 'An error occurred!'
-      if (err?.message) {
-        errorMessage = err.message
-      } else if (err?.error?.message) {
-        errorMessage = err.error.message
-      }
-
-      // Check for common revert reasons
-      if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
-          errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
-        } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
-          errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'
-        } else if (errorMessage.includes('medicineID') || errorMessage.includes('_medicineID')) {
-          errorMessage = 'Invalid medicine ID. Please check the medicine ID and try again.'
-        } else {
-          errorMessage = `Transaction failed: ${errorMessage}`
+      if (roleCheckFn) {
+        const checkId = await roleCheckFn(supplyChain, currentAccount)
+        if (checkId === 0) {
+          alert(`You are not a registered ${roleName}.`)
+          return
         }
       }
 
-      console.error('Transaction error:', err)
-      alert(errorMessage)
+      // Fetch fresh data to get accurate price
+      const chainMed = await contractService.getMedicine(supplyChain, Number(id))
+      const priceVal = chainMed.price
+
+      const receipt = await contractService.purchaseItem(supplyChain, currentAccount, id, priceVal)
+      if (receipt) {
+        loadBlockchainData()
+        alert(`Purchase successful!`)
+
+      }
+    } catch (err: any) {
+      handleError(err)
     }
   }
 
-  const handlerSubmitDistribute = async (event: React.FormEvent) => {
+  const handlerSubmitConfirm = async (event: React.FormEvent, id: string | null = null) => {
+    event.preventDefault()
+    const targetId = id || manageId
+    try {
+      const med = await contractService.getMedicine(supplyChain, Number(targetId))
+
+      if (med.buyer.toLowerCase() !== currentAccount.toLowerCase()) {
+        alert('You are not the Buyer of this item. Only the Buyer can confirm receipt.')
+        return
+      }
+      if (med.isDisputed) {
+        alert('This item is currently disputed. Resolve the dispute first.')
+        return
+      }
+
+      const receipt = await contractService.confirmReceived(supplyChain, currentAccount, targetId)
+      if (receipt) {
+        loadBlockchainData()
+        alert('Receipt Confirmed! Funds released to seller.')
+      }
+    } catch (err: any) {
+      handleError(err)
+    }
+  }
+
+  const handlerSubmitSetPrice = async (event: React.FormEvent) => {
     event.preventDefault()
     try {
-      const checkId = await contractService.findDistributor(supplyChain, currentAccount)
-      if (checkId === 0) {
-        alert('You are not a registered Distributor.')
+      const med = await contractService.getMedicine(supplyChain, Number(manageId))
+      const stage = Number(med.stage)
+
+      // Validation: Check if user is the correct role for this stage
+      let isAuthorized = false
+      let roleName = ''
+
+      if (stage === 1) { // RMS supplied, moving to Man
+        const myId = await contractService.findRawMaterialSupplier(supplyChain, currentAccount)
+        if (Number(med.rmsId) === Number(myId)) isAuthorized = true
+        roleName = 'Raw Material Supplier'
+      } else if (stage === 2) {
+        const myId = await contractService.findManufacturer(supplyChain, currentAccount)
+        if (Number(med.manId) === Number(myId)) isAuthorized = true
+        roleName = 'Manufacturer'
+      } else if (stage === 3) {
+        const myId = await contractService.findDistributor(supplyChain, currentAccount)
+        if (Number(med.disId) === Number(myId)) isAuthorized = true
+        roleName = 'Distributor'
+      } else if (stage === 4) {
+        const myId = await contractService.findRetailer(supplyChain, currentAccount)
+        if (Number(med.retId) === Number(myId)) isAuthorized = true
+        roleName = 'Retailer'
+      }
+
+      if (!isAuthorized) {
+        alert(`You are not the registered ${roleName || 'owner'} for this item (ID: ${manageId}).`)
         return
       }
-      const receipt = await contractService.distribute(supplyChain, currentAccount, disId)
+
+      const priceWei = Web3.utils.toWei(newPrice, 'ether')
+      const receipt = await contractService.setPrice(supplyChain, currentAccount, manageId, priceWei)
       if (receipt) {
         loadBlockchainData()
-        setDisId('')
-        alert('Distribution completed successfully!')
+        setNewPrice('')
+        alert('New Price Set!')
       }
     } catch (err: any) {
-      let errorMessage = 'An error occurred!'
-      if (err?.message) {
-        errorMessage = err.message
-      } else if (err?.error?.message) {
-        errorMessage = err.error.message
-      }
-
-      // Check for common revert reasons
-      if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
-          errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
-        } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
-          errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'
-        } else if (errorMessage.includes('medicineID') || errorMessage.includes('_medicineID')) {
-          errorMessage = 'Invalid medicine ID. Please check the medicine ID and try again.'
-        } else {
-          errorMessage = `Transaction failed: ${errorMessage}`
-        }
-      }
-
-      console.error('Transaction error:', err)
-      alert(errorMessage)
+      handleError(err)
     }
   }
 
-  const handlerSubmitRetail = async (event: React.FormEvent) => {
-    event.preventDefault()
-    try {
-      const checkId = await contractService.findRetailer(supplyChain, currentAccount)
-      if (checkId === 0) {
-        alert('You are not a registered Retailer.')
-        return
-      }
-      const receipt = await contractService.retail(supplyChain, currentAccount, retId)
-      if (receipt) {
-        loadBlockchainData()
-        setRetId('')
-        alert('Retail completed successfully!')
-      }
-    } catch (err: any) {
-      let errorMessage = 'An error occurred!'
-      if (err?.message) {
-        errorMessage = err.message
-      } else if (err?.error?.message) {
-        errorMessage = err.error.message
-      }
-
-      // Check for common revert reasons
-      if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
-          errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
-        } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
-          errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'
-        } else if (errorMessage.includes('medicineID') || errorMessage.includes('_medicineID')) {
-          errorMessage = 'Invalid medicine ID. Please check the medicine ID and try again.'
-        } else {
-          errorMessage = `Transaction failed: ${errorMessage}`
-        }
-      }
-
-      console.error('Transaction error:', err)
-      alert(errorMessage)
+  const handleError = (err: any) => {
+    let errorMessage = 'An error occurred!'
+    if (err?.message) {
+      errorMessage = err.message
+    } else if (err?.error?.message) {
+      errorMessage = err.error.message
     }
+
+    if (errorMessage.includes('revert')) {
+      const revertMsg = errorMessage.match(/revert (.*)/)
+      if (revertMsg && revertMsg[1]) errorMessage = revertMsg[1]
+    }
+
+    console.error('Transaction error:', err)
+    alert(errorMessage)
   }
 
-  const handlerSubmitSold = async (event: React.FormEvent) => {
-    event.preventDefault()
-    try {
-      const checkId = await contractService.findRetailer(supplyChain, currentAccount)
-      if (checkId === 0) {
-        alert('You are not a registered Retailer.')
-        return
-      }
-      const receipt = await contractService.sell(supplyChain, currentAccount, soldId)
-      if (receipt) {
-        loadBlockchainData()
-        setSoldId('')
-        alert('Item marked as sold successfully!')
-      }
-    } catch (err: any) {
-      let errorMessage = 'An error occurred!'
-      if (err?.message) {
-        errorMessage = err.message
-      } else if (err?.error?.message) {
-        errorMessage = err.error.message
-      }
 
-      // Check for common revert reasons
-      if (errorMessage.includes('revert') || errorMessage.includes('require')) {
-        if (errorMessage.includes('findRawMaterialSupplier') || errorMessage.includes('findManufacturer') || errorMessage.includes('findDistributor') || errorMessage.includes('findRetailer')) {
-          errorMessage = 'Your account is not registered for this role. Please register your account first in the Roles page.'
-        } else if (errorMessage.includes('stage') || errorMessage.includes('STAGE')) {
-          errorMessage = 'Invalid stage transition. Make sure the medicine is in the correct stage for this operation.'
-        } else if (errorMessage.includes('medicineID') || errorMessage.includes('_medicineID')) {
-          errorMessage = 'Invalid medicine ID. Please check the medicine ID and try again.'
-        } else {
-          errorMessage = `Transaction failed: ${errorMessage}`
-        }
-      }
 
-      console.error('Transaction error:', err)
-      alert(errorMessage)
-    }
-  }
 
   const getStageColor = (stage: string) => {
-    if (stage.includes('Ordered')) return 'bg-blue-100 text-blue-700 border-blue-300'
-    if (stage.includes('Raw Material')) return 'bg-green-100 text-green-700 border-green-300'
-    if (stage.includes('Manufacturing')) return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-    if (stage.includes('Distribution')) return 'bg-purple-100 text-purple-700 border-purple-300'
-    if (stage.includes('Retail')) return 'bg-orange-100 text-orange-700 border-orange-300'
-    if (stage.includes('Sold')) return 'bg-gray-100 text-gray-700 border-gray-300'
+    if (stage === STAGE.Ordered) return 'bg-blue-100 text-blue-700 border-blue-300'
+    if (stage === STAGE.RawMaterialSupply) return 'bg-green-100 text-green-700 border-green-300'
+    if (stage === STAGE.Manufacturing) return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+    if (stage === STAGE.Distribution) return 'bg-purple-100 text-purple-700 border-purple-300'
+    if (stage === STAGE.Retail) return 'bg-orange-100 text-orange-700 border-orange-300'
+    if (stage === STAGE.Sold) return 'bg-gray-100 text-gray-700 border-gray-300'
     return 'bg-gray-100 text-gray-700 border-gray-300'
   }
 
@@ -328,8 +323,19 @@ export default function Supply() {
               HOME
             </button>
           </div>
-          <div className="text-xs text-gray-500 font-mono">
-            Account: {currentAccount}
+          <div className="flex justify-between items-end">
+            <div className="text-xs text-gray-500 font-mono">
+              Account: {currentAccount}
+            </div>
+            <label className="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer hover:text-blue-600 transition-colors">
+              <input
+                type="checkbox"
+                checked={debugMode}
+                onChange={(e) => setDebugMode(e.target.checked)}
+                className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
+              />
+              <span className="font-semibold">🐞 Debug Mode (View Console)</span>
+            </label>
           </div>
         </div>
 
@@ -406,59 +412,166 @@ export default function Supply() {
           </div>
         </div>
 
-        {/* Medicines Table */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-              <svg className="w-6 h-6 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              Available Batteries
-            </h2>
-            <div className="text-sm text-gray-500">
-              Total: {Object.keys(med).length} items
-            </div>
+        {/* Unified Dashboard */}
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+
+          {/* Quick Supply (RMS Only) */}
+          <div className="lg:col-span-1 bg-white rounded-2xl shadow-xl p-6 border-t-8 border-blue-500">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">🏭 Supply New Material</h3>
+            <p className="text-sm text-gray-500 mb-4">Register a new raw material batch and set the initial price.</p>
+            <form onSubmit={handlerSubmitRMSsupply} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Battery ID</label>
+                <input
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  type="text"
+                  onChange={handlerChangeRMSId}
+                  placeholder="e.g. 1"
+                  value={rmsId}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Price (ETH)</label>
+                <input
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  type="text"
+                  onChange={handlerChangeRMSPrice}
+                  placeholder="e.g. 0.5"
+                  value={rmsPrice}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition"
+              >
+                Supply & List
+              </button>
+            </form>
           </div>
 
-          {Object.keys(med).length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-              <p className="text-gray-500 text-lg">No batteries available yet</p>
-              <p className="text-gray-400 text-sm mt-2">Add batteries in the Order Materials page</p>
+          {/* Action Center - Replaces old forms */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl p-6 border-t-8 border-orange-500">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">🛍️ Marketplace & Actions</h3>
+              <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600">Auto-detected Roles</span>
             </div>
-          ) : (
+
+            {/* Smart Table */}
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-orange-50 to-red-50">
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">ID</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Description</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Current Stage</th>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Item</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Seller</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Stage</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Price</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-100">
                   {Object.keys(med).map((key) => {
                     const index = parseInt(key)
+                    const item = med[index]
                     const stage = medStage[index]
-                    return (
-                      <tr key={key} className="hover:bg-orange-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center text-white font-bold mr-3">
-                              {med[index].id}
-                            </div>
-                            <span className="font-semibold text-gray-800">{med[index].id}</span>
+                    const priceEth = item.price ? Web3.utils.fromWei(item.price, 'ether') : '0'
+                    const sellerAddr = (item.seller && item.seller !== '0x0000000000000000000000000000000000000000')
+                      ? `${item.seller.substring(0, 6)}...${item.seller.substring(38)}`
+                      : '-'
+                    const isMyItem = (item.buyer && item.buyer.toLowerCase() === currentAccount.toLowerCase()) ||
+                      (item.seller && item.seller.toLowerCase() === currentAccount.toLowerCase())
+
+                    // Logic to determine Action Button
+                    let ActionButton = null;
+                    const isSold = item.buyer && item.buyer !== '0x0000000000000000000000000000000000000000';
+                    const isPriceSet = item.price && BigInt(item.price) > BigInt(0);
+
+                    // 1. Pending Confirmation State (Sold but money held in contract)
+                    if (isSold) {
+                      if (item.buyer.toLowerCase() === currentAccount.toLowerCase()) {
+                        // I am the Buyer -> Show Confirm
+                        ActionButton = (
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={(e) => { setManageId(item.id.toString()); handlerSubmitConfirm(e, item.id.toString()) }}
+                              className="px-3 py-1 text-xs text-white bg-blue-600 rounded shadow hover:bg-blue-700 animate-pulse"
+                            >
+                              Confirm Receipt
+                            </button>
+                            <button
+                              onClick={(e) => { setManageId(item.id.toString()); setDisputeReason("Defective Goods"); handlerSubmitRaiseDispute(e, item.id.toString()) }}
+                              className="px-3 py-1 text-[10px] text-red-600 border border-red-200 rounded hover:bg-red-50"
+                            >
+                              Raise Dispute
+                            </button>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 font-medium text-gray-800">{med[index].name}</td>
-                        <td className="px-6 py-4 text-gray-600">{med[index].description}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStageColor(stage)}`}>
+                        )
+                      } else {
+                        // Someone else bought it -> Pending
+                        ActionButton = <span className="text-xs text-orange-500 font-bold">Sold - Pending Confirmation</span>
+                      }
+                    }
+                    // 2. For Sale State (Listed)
+                    else if (isPriceSet && !item.isDisputed) {
+                      let buyHandler = null;
+                      let btnColor = "bg-gray-800 hover:bg-black";
+                      let btnText = "Buy";
+
+                      if (stage === STAGE.RawMaterialSupply) {
+                        buyHandler = (e: any) => handlerSubmitPurchase(e, item.id.toString(), contractService.findManufacturer, 'Manufacturer');
+                        btnColor = "bg-green-600 hover:bg-green-700";
+                        btnText = "Buy (Man)";
+                      } else if (stage === STAGE.Manufacturing) {
+                        buyHandler = (e: any) => handlerSubmitPurchase(e, item.id.toString(), contractService.findDistributor, 'Distributor');
+                        btnColor = "bg-purple-600 hover:bg-purple-700";
+                        btnText = "Buy (Dis)";
+                      } else if (stage === STAGE.Distribution) {
+                        buyHandler = (e: any) => handlerSubmitPurchase(e, item.id.toString(), contractService.findRetailer, 'Retailer');
+                        btnColor = "bg-orange-600 hover:bg-orange-700";
+                        btnText = "Buy (Ret)";
+                      } else if (stage === STAGE.Retail) {
+                        buyHandler = (e: any) => handlerSubmitPurchase(e, item.id.toString(), null, 'Consumer');
+                        btnColor = "bg-red-600 hover:bg-red-700";
+                        btnText = "Buy (Cons)";
+                      }
+
+                      if (buyHandler) {
+                        ActionButton = (
+                          <button onClick={buyHandler} className={`px-3 py-1 text-xs text-white rounded shadow ${btnColor}`}>
+                            {btnText}
+                          </button>
+                        )
+                      }
+                    }
+                    // 3. Unlisted State (Needs Pricing or invalid)
+                    else if (!isPriceSet && stage !== STAGE.Sold && stage !== STAGE.Ordered && !item.isDisputed) {
+                      ActionButton = (
+                        <button
+                          onClick={() => { setManageId(item.id.toString()); window.scrollTo(0, document.body.scrollHeight); }}
+                          className="px-3 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
+                        >
+                          List for Sale
+                        </button>
+                      )
+                    } else if (item.isDisputed) {
+                      ActionButton = <span className="text-xs text-red-600 font-bold bg-red-100 px-2 py-1 rounded">⛔ DISPUTED</span>
+                    }
+
+                    return (
+                      <tr key={key} className={isMyItem ? "bg-blue-50" : ""}>
+                        <td className="px-4 py-3 font-mono text-xs">{item.id}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-800">{item.name}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-gray-600" title={item.seller}>{sellerAddr}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${getStageColor(stage)}`}>
                             {stage}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm">{priceEth} <span className="text-xs text-gray-500">ETH</span></td>
+                        <td className="px-4 py-3">
+                          {ActionButton || <span className="text-xs text-gray-400">-</span>}
                         </td>
                       </tr>
                     )
@@ -466,239 +579,152 @@ export default function Supply() {
                 </tbody>
               </table>
             </div>
-          )}
+          </div>
+
         </div>
 
-        {/* Supply Chain Steps */}
-        <div className="space-y-6">
-          {/* Step 1: RMS Supply */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-xl p-6 border-l-4 border-blue-500">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mr-4 shadow-lg">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h5 className="text-xl font-bold text-gray-800">
-                  Step 1: Supply Raw Materials
-                </h5>
-                <p className="text-sm text-gray-600 mt-1">Only a registered Raw Material Supplier can perform this step</p>
-              </div>
-              <div className="px-3 py-1 bg-blue-500 text-white rounded-full text-xs font-bold">
-                1
-              </div>
-            </div>
-            <form onSubmit={handlerSubmitRMSsupply} className="flex gap-3">
-              <div className="flex-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                </div>
-                <input
-                  className="w-full pl-12 pr-4 py-3 border-2 border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg bg-white"
-                  type="text"
-                  onChange={handlerChangeRMSId}
-                  placeholder="Enter Battery ID"
-                  value={rmsId}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Supply
-              </button>
-            </form>
-          </div>
+        {/* Management Section - Dynamic Inventory */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 border-t-8 border-gray-800 mt-8">
+          <h5 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            My Inventory & Actions
+          </h5>
 
-          {/* Step 2: Manufacturing */}
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl shadow-xl p-6 border-l-4 border-green-500">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mr-4 shadow-lg">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h5 className="text-xl font-bold text-gray-800">
-                  Step 2: Manufacture
-                </h5>
-                <p className="text-sm text-gray-600 mt-1">Only a registered Manufacturer can perform this step</p>
-              </div>
-              <div className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold">
-                2
-              </div>
-            </div>
-            <form onSubmit={handlerSubmitManufacturing} className="flex gap-3">
-              <div className="flex-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                </div>
-                <input
-                  className="w-full pl-12 pr-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg bg-white"
-                  type="text"
-                  onChange={handlerChangeManId}
-                  placeholder="Enter Battery ID"
-                  value={manId}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Manufacture
-              </button>
-            </form>
-          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Object.keys(med).map((key) => {
+              const item = med[parseInt(key)]
+              const priceEth = Web3.utils.fromWei(item.price || '0', 'ether')
+              const isBuyer = item.buyer && currentAccount && item.buyer.toLowerCase() === currentAccount.toLowerCase()
+              // const isSeller = item.seller && currentAccount && item.seller.toLowerCase() === currentAccount.toLowerCase()
+              // Check if I am the 'owner' of this stage to set price
+              // We need my role ID. contractService has `findRole`. We can't easy check synchronous here.
+              // Simplified: Show actions where I am involved as Buyer/Seller/Owner
 
-          {/* Step 3: Distribute */}
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl shadow-xl p-6 border-l-4 border-purple-500">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mr-4 shadow-lg">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h5 className="text-xl font-bold text-gray-800">
-                  Step 3: Distribute
-                </h5>
-                <p className="text-sm text-gray-600 mt-1">Only a registered Distributor can perform this step</p>
-              </div>
-              <div className="px-3 py-1 bg-purple-500 text-white rounded-full text-xs font-bold">
-                3
-              </div>
-            </div>
-            <form onSubmit={handlerSubmitDistribute} className="flex gap-3">
-              <div className="flex-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                </div>
-                <input
-                  className="w-full pl-12 pr-4 py-3 border-2 border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg bg-white"
-                  type="text"
-                  onChange={handlerChangeDisId}
-                  placeholder="Enter Battery ID"
-                  value={disId}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Distribute
-              </button>
-            </form>
-          </div>
+              // We will rely on explicit forms as fallback, but this helps.
+              // Actually, let's just make the forms generic but use a 'Select ID' dropdown populated by my items?
+              // No, let's keep the forms but make them nicer, AND add a "Quick Actions" list.
 
-          {/* Step 4: Retail */}
-          <div className="bg-gradient-to-br from-yellow-50 to-orange-100 rounded-2xl shadow-xl p-6 border-l-4 border-orange-500">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mr-4 shadow-lg">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h5 className="text-xl font-bold text-gray-800">
-                  Step 4: Retail
-                </h5>
-                <p className="text-sm text-gray-600 mt-1">Only a registered Retailer can perform this step</p>
-              </div>
-              <div className="px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold">
-                4
-              </div>
-            </div>
-            <form onSubmit={handlerSubmitRetail} className="flex gap-3">
-              <div className="flex-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                </div>
-                <input
-                  className="w-full pl-12 pr-4 py-3 border-2 border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg bg-white"
-                  type="text"
-                  onChange={handlerChangeRetId}
-                  placeholder="Enter Battery ID"
-                  value={retId}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Retail
-              </button>
-            </form>
-          </div>
+              return null // We will implement the generic forms below instead of complex per-item logic for now to ensure stability
+            })}
 
-          {/* Step 5: Sold */}
-          <div className="bg-gradient-to-br from-red-50 to-pink-100 rounded-2xl shadow-xl p-6 border-l-4 border-red-500">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center mr-4 shadow-lg">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h5 className="text-xl font-bold text-gray-800">
-                  Step 5: Mark as Sold
-                </h5>
-                <p className="text-sm text-gray-600 mt-1">Only a registered Retailer can perform this step</p>
-              </div>
-              <div className="px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold">
-                5
-              </div>
-            </div>
-            <form onSubmit={handlerSubmitSold} className="flex gap-3">
-              <div className="flex-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
+            {/* 1. Confirm Receipt Card */}
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-3">
+                <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                 </div>
+                <h6 className="font-bold text-gray-700">Confirm Receipt</h6>
+              </div>
+              <p className="text-xs text-gray-500 mb-4 h-10">Received goods? Release funds to the seller to complete the purchase.</p>
+              <form onSubmit={(e) => { setManageId(manageId); handlerSubmitConfirm(e); }}>
                 <input
-                  className="w-full pl-12 pr-4 py-3 border-2 border-red-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent text-lg bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 text-sm"
                   type="text"
-                  onChange={handlerChangeSoldId}
+                  onChange={(e) => setManageId(e.target.value)}
                   placeholder="Enter Battery ID"
-                  value={soldId}
                   required
                 />
+                <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm">
+                  Confirm & Release Funds
+                </button>
+              </form>
+            </div>
+
+            {/* 2. Set Price Card */}
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-3">
+                <div className="p-2 bg-green-100 rounded-lg mr-3">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <h6 className="font-bold text-gray-700">Set Selling Price</h6>
               </div>
-              <button
-                type="submit"
-                className="px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Mark as Sold
-              </button>
-            </form>
+              <p className="text-xs text-gray-500 mb-4 h-10">Ready to sell? List the item for the next buyer.</p>
+              <form onSubmit={(e) => { setManageId(manageId); handlerSubmitSetPrice(e); }}>
+                <input
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 text-sm"
+                  type="text"
+                  onChange={(e) => setManageId(e.target.value)}
+                  placeholder="Enter Battery ID"
+                  required
+                />
+                <input
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 text-sm"
+                  type="text"
+                  onChange={handlerChangeNewPrice}
+                  placeholder="Price (ETH)"
+                  required
+                />
+                <button type="submit" className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
+                  Set Price
+                </button>
+              </form>
+            </div>
+
+            {/* 3. Raise Dispute Card */}
+            <div className="bg-red-50 p-6 rounded-xl border border-red-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-3">
+                <div className="p-2 bg-red-100 rounded-lg mr-3">
+                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                <h6 className="font-bold text-red-700">Raise Dispute</h6>
+              </div>
+              <p className="text-xs text-red-500 mb-4 h-10">Issues with the product? Lock funds and request intervention.</p>
+              <form onSubmit={(e) => { setManageId(manageId); handlerSubmitRaiseDispute(e); }}>
+                <input
+                  className="w-full px-3 py-2 border border-red-200 rounded-lg mb-2 text-sm focus:ring-red-500"
+                  type="text"
+                  onChange={(e) => setManageId(e.target.value)}
+                  placeholder="Enter Battery ID"
+                  required
+                />
+                <input
+                  className="w-full px-3 py-2 border border-red-200 rounded-lg mb-2 text-sm focus:ring-red-500"
+                  type="text"
+                  onChange={handlerChangeDisputeReason}
+                  placeholder="Reason"
+                  required
+                />
+                <button type="submit" className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm">
+                  Raise Dispute
+                </button>
+              </form>
+            </div>
+
+            {/* 4. Resolve Dispute Card */}
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-3">
+                <div className="p-2 bg-gray-200 rounded-lg mr-3">
+                  <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
+                </div>
+                <h6 className="font-bold text-gray-700">Resolve (Admin)</h6>
+              </div>
+              <p className="text-xs text-gray-500 mb-4 h-10">Contract Owner: Adjudicate disputes and release funds.</p>
+              <div className="space-y-2">
+                <input
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 text-sm"
+                  type="text"
+                  onChange={(e) => setManageId(e.target.value)}
+                  placeholder="Enter Battery ID"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handlerSubmitResolveDispute(true)}
+                    className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-xs"
+                  >
+                    Refund Buyer
+                  </button>
+                  <button
+                    onClick={() => handlerSubmitResolveDispute(false)}
+                    className="flex-1 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium text-xs"
+                  >
+                    Pay Seller
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

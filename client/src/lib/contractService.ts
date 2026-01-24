@@ -1,6 +1,19 @@
 import { RoleType } from '@/types'
+import { TransactionDebugger } from './debugger'
+import { Web3 } from 'web3'
+
+declare global {
+    interface Window {
+        web3?: any
+    }
+}
 
 export const contractService = {
+    // Debug Control
+    setDebugMode: (enabled: boolean) => {
+        TransactionDebugger.toggle(enabled)
+    },
+
     getMedicineCount: async (contract: any) => {
         return Number(await contract.methods.medicineCount().call())
     },
@@ -70,41 +83,113 @@ export const contractService = {
 
     // Transactions
     addMedicine: async (contract: any, account: string) => {
-        return await contract.methods.addMedicine().send({ from: account })
+        const web3 = window.web3 as Web3
+        const debugData = await TransactionDebugger.logPre(web3, account)
+
+        const receipt = await contract.methods.addMedicine().send({ from: account })
+
+        await TransactionDebugger.logPost(web3, receipt, account, null, debugData)
+        return receipt
     },
 
     addRole: async (contract: any, account: string, type: string, address: string) => {
+        const web3 = window.web3 as Web3
+        const debugData = await TransactionDebugger.logPre(web3, account)
+
+        let receipt;
         switch (type) {
             case 'rms':
-                return await contract.methods.addRawMaterialSupplier(address).send({ from: account })
+                receipt = await contract.methods.addRawMaterialSupplier(address).send({ from: account })
+                break;
             case 'man':
-                return await contract.methods.addManufacturer(address).send({ from: account })
+                receipt = await contract.methods.addManufacturer(address).send({ from: account })
+                break;
             case 'dis':
-                return await contract.methods.addDistributor(address).send({ from: account })
+                receipt = await contract.methods.addDistributor(address).send({ from: account })
+                break;
             case 'ret':
-                return await contract.methods.addRetailer(address).send({ from: account })
+                receipt = await contract.methods.addRetailer(address).send({ from: account })
+                break;
             default:
                 throw new Error('Invalid role type')
         }
+
+        await TransactionDebugger.logPost(web3, receipt, account, null, debugData)
+        return receipt
     },
 
-    supplyRawMaterial: async (contract: any, account: string, medicineId: string) => {
-        return await contract.methods.supplyRawMaterial(medicineId).send({ from: account })
+    supplyRawMaterial: async (contract: any, account: string, medicineId: string, price: string) => {
+        const web3 = window.web3 as Web3
+        const debugData = await TransactionDebugger.logPre(web3, account)
+
+        const receipt = await contract.methods.supplyRawMaterial(medicineId, price).send({ from: account })
+
+        await TransactionDebugger.logPost(web3, receipt, account, null, debugData)
+        return receipt
     },
 
-    manufacture: async (contract: any, account: string, medicineId: string) => {
-        return await contract.methods.manufacture(medicineId).send({ from: account })
+    purchaseItem: async (contract: any, account: string, medicineId: string, priceVal: string) => {
+        const web3 = window.web3 as Web3
+        // Receiver is Contract (Escrow)
+        const debugData = await TransactionDebugger.logPre(web3, account, contract.options.address, priceVal)
+
+        const receipt = await contract.methods.purchaseItem(medicineId).send({ from: account, value: priceVal })
+
+        await TransactionDebugger.logPost(web3, receipt, account, contract.options.address, debugData)
+        return receipt
     },
 
-    distribute: async (contract: any, account: string, medicineId: string) => {
-        return await contract.methods.distribute(medicineId).send({ from: account })
+    confirmReceived: async (contract: any, account: string, medicineId: string) => {
+        const web3 = window.web3 as Web3
+        // To track seller, we'd need to fetch medicine data first.
+        // For efficiency, we'll try to peek, but if not we just log sender.
+        let seller = null;
+        if (TransactionDebugger.enabled) {
+            const med = await contract.methods.medicines(medicineId).call();
+            seller = med.seller;
+        }
+
+        const debugData = await TransactionDebugger.logPre(web3, account, seller)
+
+        const receipt = await contract.methods.confirmReceived(medicineId).send({ from: account })
+
+        await TransactionDebugger.logPost(web3, receipt, account, seller, debugData)
+        return receipt
     },
 
-    retail: async (contract: any, account: string, medicineId: string) => {
-        return await contract.methods.retail(medicineId).send({ from: account })
+    setPrice: async (contract: any, account: string, medicineId: string, price: string) => {
+        const web3 = window.web3 as Web3
+        const debugData = await TransactionDebugger.logPre(web3, account)
+
+        const receipt = await contract.methods.setPrice(medicineId, price).send({ from: account })
+
+        await TransactionDebugger.logPost(web3, receipt, account, null, debugData)
+        return receipt
     },
 
-    sell: async (contract: any, account: string, medicineId: string) => {
-        return await contract.methods.sell(medicineId).send({ from: account })
+    raiseDispute: async (contract: any, account: string, medicineId: string, reason: string) => {
+        return await contract.methods.raiseDispute(medicineId, reason).send({ from: account })
+    },
+
+    resolveDispute: async (contract: any, account: string, medicineId: string, refundBuyer: boolean) => {
+        const web3 = window.web3 as Web3
+        let target = null
+
+        // Debugging: Identify who gets the money
+        if (TransactionDebugger.enabled) {
+            try {
+                const med = await contract.methods.medicines(medicineId).call()
+                target = refundBuyer ? med.buyer : med.seller
+            } catch (e) {
+                console.warn("Could not fetch medicine details for debug log")
+            }
+        }
+
+        const debugData = await TransactionDebugger.logPre(web3, account, target)
+
+        const receipt = await contract.methods.resolveDispute(medicineId, refundBuyer).send({ from: account })
+
+        await TransactionDebugger.logPost(web3, receipt, account, target, debugData)
+        return receipt
     }
 }

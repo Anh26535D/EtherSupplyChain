@@ -17,6 +17,10 @@ export interface Medicine {
     retId: string
     stage: SupplyChainStage | string // Web3 call returns string, we cast to Enum
     timestamp?: string
+    price: string
+    seller: string
+    buyer: string
+    isDisputed: boolean
 }
 
 export type RoleType = 'rms' | 'man' | 'dis' | 'ret'

@@ -124,7 +124,7 @@ export default function AssignRoles() {
       }
 
       loadBlockchainData()
-      setNewRole({ address: '', name: '', place: '', type: 'rms' })
+      setNewRole((prev) => ({ ...prev, address: '', name: '', place: '' }))
     } catch (err: any) {
       let errorMessage = 'An error occurred!'
       if (err?.message) {
