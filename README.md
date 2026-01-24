@@ -55,6 +55,7 @@ Watch the demo video: [Canva Design Demo](https://www.canva.com/design/DAFb-i9v_
 - 🔄 **Supply Chain Flow**: Manage product stages (Order → Raw Material Supply → Manufacturing → Distribution → Retail → Sold)
 - 📊 **Real-Time Tracking**: Track products with detailed stage information and QR codes
 - 🎨 **Modern UI**: Beautiful, responsive interface built with Next.js and Tailwind CSS
+- 🐞 **Transaction Debugger**: Toggleable debug mode for detailed transaction logs and gas fee monitoring
 - 🔗 **Web3 Integration**: Seamless connection with MetaMask wallet
 - 📱 **Mobile Responsive**: Works perfectly on all devices
 
@@ -233,17 +234,75 @@ npm start
 - Enter product details: ID, name, and description
 - Ensure at least one participant of each role is registered
 
-### 3. Manage Supply Chain Flow
+### 3. Step-by-Step Walkthrough (Normal Case)
+Follow this exact sequence to simulate a complete product lifecycle:
 
-- Access "Supply Chain Flow" page
-- Each role can perform their specific action:
-  - **Raw Material Supplier**: Supply raw materials
-  - **Manufacturer**: Manufacture products
-  - **Distributor**: Distribute products
-  - **Retailer**: Retail and mark as sold
+#### Phase 1: Preparation (Owner)
+1.  **Register Roles**: Go to "Register Roles". Register distinct accounts for RMS (`Account 2`), Manufacturer (`Account 3`), Distributor (`Account 4`), and Retailer (`Account 5`).
+2.  **Order Item**: Go to "Order Materials". Create a new order (ID: `1`, Name: `Battery`). Item Stage: **Ordered**.
 
-### 4. Track Products
+#### Phase 2: Raw Material Supply (RMS)
+3.  **Switch to RMS Account** (`Account 2`).
+4.  Go to **Supply Chain Flow**.
+5.  In the left panel ("Supply New Material"), enter ID: `1` and Price: `2` ETH. Click **Supply**.
+6.  Item Stage: **Raw Material Supply**. Status: Listing for 2 ETH.
 
+#### Phase 3: Manufacturing (Manufacturer)
+7.  **Switch to Manufacturer Account** (`Account 3`).
+8.  In the "Marketplace" table, click **"Buy (Man)"**. Confirm the transaction (pays 2 ETH).
+    - *Funds are now locked in the Smart Contract.*
+9.  **Confirm Receipt**: In the table, click **"Confirm Receipt"** when the button appears pulsing blue.
+    - *Funds are released to RMS.*
+10. **Listing**: Scroll down to the "List for Sale" card. Enter ID: `1` and New Price: `4` ETH. Click **Set Price**.
+11. Item Stage: **Manufacture**. Status: Listing for 4 ETH.
+
+#### Phase 4: Distribution (Distributor)
+12. **Switch to Distributor Account** (`Account 4`).
+13. Click **"Buy (Dis)"** (pays 4 ETH).
+14. Click **"Confirm Receipt"** (releases 4 ETH to Man).
+15. **Listing**: Set New Price: `6` ETH.
+16. Item Stage: **Distribution**. Status: Listing for 6 ETH.
+
+#### Phase 5: Retail (Retailer)
+17. **Switch to Retailer Account** (`Account 5`).
+18. Click **"Buy (Ret)"** (pays 6 ETH).
+19. Click **"Confirm Receipt"** (releases 6 ETH to Dis).
+20. **Listing**: Set New Price: `8` ETH.
+21. Item Stage: **Retail**. Status: Listing for 8 ETH.
+
+#### Phase 6: Consumption (Consumer)
+22. **Switch to any Consumer Account** (`Account 6`).
+23. Click **"Buy (Cons)"** (pays 8 ETH).
+24. Item Stage: **Sold**. Cycle Complete. Only "Confirm Receipt" is needed if you want to release funds to Retailer, though consumer goods assume finality.
+
+
+
+### 4. My Inventory & Actions (Critical!)
+After purchasing an item, it moves to your **Inventory** (visible at the bottom of the Supply page). You MUST perform these actions to proceed:
+
+#### A. Confirm Receipt (Releases Funds)
+- **Role**: Buyer
+- **Action**: Once you receive the physical goods, click **"Confirm Receipt"**.
+- **Result**: This releases the locked ETH from the contract to the Seller. The item is now fully yours.
+
+#### B. Set Selling Price (Lists Item)
+- **Role**: Seller (Current Owner)
+- **Action**: After confirming receipt, set a new **Selling Price** for the next buyer.
+- **Result**: The item becomes available for purchase by the next role in the chain.
+
+#### C. Raise Dispute (Locks Funds)
+- **Role**: Buyer
+- **When**: If goods are defective, missing, or fake.
+- **Action**: Click **"Raise Dispute"** and provide a reason.
+- **Result**: Funds remain locked in the contract. The Seller cannot receive payment until resolved.
+
+#### D. Resolve Dispute (Admin Only)
+- **Role**: Contract Owner
+- **Action**: Review the case and decide to either:
+    - **Refund Buyer**: Return 100% of the funds to the Buyer.
+    - **Pay Seller**: Rule in favor of the Seller and release funds.
+
+### 5. Track Products
 - Visit "Track Materials" page
 - Enter a product ID to view its complete journey
 - View detailed information about each stage
@@ -254,7 +313,6 @@ npm start
 The `SupplyChain.sol` smart contract implements a comprehensive supply chain management system with the following features:
 
 ### Roles
-
 - **Owner**: Deploys the contract and can register other roles
 - **Raw Material Supplier (RMS)**: Supplies raw materials
 - **Manufacturer (MAN)**: Manufactures products
@@ -262,7 +320,6 @@ The `SupplyChain.sol` smart contract implements a comprehensive supply chain man
 - **Retailer (RET)**: Sells products to consumers
 
 ### Product Stages
-
 1. **Ordered** (Stage 0): Product order created
 2. **Raw Material Supplied** (Stage 1): Raw materials supplied
 3. **Manufacturing** (Stage 2): Product being manufactured
@@ -271,11 +328,13 @@ The `SupplyChain.sol` smart contract implements a comprehensive supply chain man
 6. **Sold** (Stage 5): Product sold to consumer
 
 ### Key Functions
-
 - `addRMS()`, `addManufacturer()`, `addDistributor()`, `addRetailer()`: Register participants
 - `addMedicine()`: Create new product orders
-- `RMSsupply()`, `Manufacturing()`, `Distribute()`, `Retail()`, `sold()`: Progress products through stages
-- `showStage()`: Get current stage of a product
+- `supplyRawMaterial(id, price)`: List initial item
+- `purchaseItem(id)`: Payable function to buy item and advance stage
+- `confirmReceived(id)`: Release Escrow funds to seller
+- `setPrice(id, price)`: List item for next sale
+- `raiseDispute()`, `resolveDispute()`: Handle transaction disputes
 
 ![Smart Contract Flow](https://raw.githubusercontent.com/faizack619/Supply-Chain-Gode-Blockchain/master/client/public/Supply%20Chain%20Design%20(1).png)
 
@@ -296,6 +355,36 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [MetaMask Documentation](https://docs.metamask.io/)
 
 
+
+### 6. Transaction Debugging
+- Enable **Debug Mode** using the checkbox on the "Supply Chain Flow" page.
+- Open the browser console (F12) to view detailed logs:
+  - Pre-transaction balances
+  - Gas usage and costs
+  - Net balance changes
+- This is useful for verifying financial flows and ensuring correct payments.
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+#### 1. "Transaction gas limit exceeds gas cap" or "Transaction reverted"
+- **Cause**: Often caused by invalid state (e.g., trying to supply materials for an ID that doesn't exist) or old artifacts.
+- **Fix**: 
+  - Ensure you are registered for the correct role.
+  - Check that the product ID exists and is in the correct stage.
+  - Reset MetaMask account: **Settings > Advanced > Clear Activity Tab Data**.
+
+#### 2. "Unrecognized selector"
+- **Cause**: ABI mismatch. The frontend is trying to call a function signature that the deployed contract contract doesn't have (often happens after updating Smart Contract arguments).
+- **Fix**:
+  - Restart the Hardhat node and redeploy contracts.
+  - Ensure `client/src/artifacts` is updated using `npx hardhat compile` in the backend.
+  - Restart the frontend server (`npm run dev`) to clear cache.
+
+#### 3. "Nonce too high"
+- **Cause**: MetaMask transaction history is out of sync with the local blockchain.
+- **Fix**: Reset MetaMask account (Settings > Advanced > Clear Activity Tab Data).
 
 ## ⭐ Show Your Support
 
