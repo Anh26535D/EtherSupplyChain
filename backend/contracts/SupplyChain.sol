@@ -321,9 +321,29 @@ contract SupplyChain {
         med.buyer = payable(address(0));
 
         if (_refundBuyer) {
+            // Revert Stage and Role assignment if purchase is cancelled
+            if (med.stage == Stage.Manufacture) {
+                med.stage = Stage.RawMaterialSupply;
+                med.manId = 0;
+            } else if (med.stage == Stage.Distribution) {
+                med.stage = Stage.Manufacture;
+                med.disId = 0;
+            } else if (med.stage == Stage.Retail) {
+                med.stage = Stage.Distribution;
+                med.retId = 0;
+            } else if (med.stage == Stage.Sold) {
+                med.stage = Stage.Retail;
+            }
+
             (bool sent, ) = buyer.call{value: amount}("");
             require(sent, "Refund failed");
             emit DisputeResolved(_medicineID, msg.sender, true);
+            emit StageChanged(
+                _medicineID,
+                med.stage,
+                msg.sender,
+                block.timestamp
+            );
         } else {
             (bool sent, ) = seller.call{value: amount}("");
             require(sent, "Release to seller failed");

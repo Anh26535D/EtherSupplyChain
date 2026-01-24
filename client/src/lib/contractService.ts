@@ -172,6 +172,24 @@ export const contractService = {
     },
 
     resolveDispute: async (contract: any, account: string, medicineId: string, refundBuyer: boolean) => {
-        return await contract.methods.resolveDispute(medicineId, refundBuyer).send({ from: account })
+        const web3 = window.web3 as Web3
+        let target = null
+
+        // Debugging: Identify who gets the money
+        if (TransactionDebugger.enabled) {
+            try {
+                const med = await contract.methods.medicines(medicineId).call()
+                target = refundBuyer ? med.buyer : med.seller
+            } catch (e) {
+                console.warn("Could not fetch medicine details for debug log")
+            }
+        }
+
+        const debugData = await TransactionDebugger.logPre(web3, account, target)
+
+        const receipt = await contract.methods.resolveDispute(medicineId, refundBuyer).send({ from: account })
+
+        await TransactionDebugger.logPost(web3, receipt, account, target, debugData)
+        return receipt
     }
 }

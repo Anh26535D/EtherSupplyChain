@@ -81,10 +81,11 @@ export default function Supply() {
   const handlerChangeNewPrice = (event: React.ChangeEvent<HTMLInputElement>) => setNewPrice(event.target.value)
   const handlerChangeDisputeReason = (event: React.ChangeEvent<HTMLInputElement>) => setDisputeReason(event.target.value)
 
-  const handlerSubmitRaiseDispute = async (event: React.FormEvent) => {
+  const handlerSubmitRaiseDispute = async (event: React.FormEvent, id: string | null = null) => {
     event.preventDefault()
+    const targetId = id || manageId
     try {
-      const receipt = await contractService.raiseDispute(supplyChain, currentAccount, manageId, disputeReason)
+      const receipt = await contractService.raiseDispute(supplyChain, currentAccount, targetId, disputeReason)
       if (receipt) {
         loadBlockchainData()
         setManageId('')
@@ -184,10 +185,11 @@ export default function Supply() {
     }
   }
 
-  const handlerSubmitConfirm = async (event: React.FormEvent) => {
+  const handlerSubmitConfirm = async (event: React.FormEvent, id: string | null = null) => {
     event.preventDefault()
+    const targetId = id || manageId
     try {
-      const med = await contractService.getMedicine(supplyChain, Number(manageId))
+      const med = await contractService.getMedicine(supplyChain, Number(targetId))
 
       if (med.buyer.toLowerCase() !== currentAccount.toLowerCase()) {
         alert('You are not the Buyer of this item. Only the Buyer can confirm receipt.')
@@ -198,7 +200,7 @@ export default function Supply() {
         return
       }
 
-      const receipt = await contractService.confirmReceived(supplyChain, currentAccount, manageId)
+      const receipt = await contractService.confirmReceived(supplyChain, currentAccount, targetId)
       if (receipt) {
         loadBlockchainData()
         alert('Receipt Confirmed! Funds released to seller.')
@@ -493,13 +495,13 @@ export default function Supply() {
                         ActionButton = (
                           <div className="flex flex-col gap-1">
                             <button
-                              onClick={(e) => { setManageId(item.id.toString()); handlerSubmitConfirm(e) }}
+                              onClick={(e) => { setManageId(item.id.toString()); handlerSubmitConfirm(e, item.id.toString()) }}
                               className="px-3 py-1 text-xs text-white bg-blue-600 rounded shadow hover:bg-blue-700 animate-pulse"
                             >
                               Confirm Receipt
                             </button>
                             <button
-                              onClick={(e) => { setManageId(item.id.toString()); setDisputeReason("Defective Goods"); handlerSubmitRaiseDispute(e) }}
+                              onClick={(e) => { setManageId(item.id.toString()); setDisputeReason("Defective Goods"); handlerSubmitRaiseDispute(e, item.id.toString()) }}
                               className="px-3 py-1 text-[10px] text-red-600 border border-red-200 rounded hover:bg-red-50"
                             >
                               Raise Dispute
