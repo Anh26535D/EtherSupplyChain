@@ -316,12 +316,11 @@ contract SupplyChain {
         address payable seller = med.seller;
 
         med.isDisputed = false;
-        med.price = 0; // Reset
-        med.seller = payable(address(0));
         med.buyer = payable(address(0));
 
         if (_refundBuyer) {
             // Revert Stage and Role assignment if purchase is cancelled
+            // we do NOT reset price/seller so it remains listed
             if (med.stage == Stage.Manufacture) {
                 med.stage = Stage.RawMaterialSupply;
                 med.manId = 0;
@@ -345,6 +344,10 @@ contract SupplyChain {
                 block.timestamp
             );
         } else {
+            // Funds go to seller (transaction effectively completed)
+            med.price = 0; // Reset
+            med.seller = payable(address(0));
+
             (bool sent, ) = seller.call{value: amount}("");
             require(sent, "Release to seller failed");
             emit DisputeResolved(_medicineID, msg.sender, false);

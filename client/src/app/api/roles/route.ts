@@ -37,8 +37,20 @@ export async function POST(request: Request) {
     }
 
     const db = getDB()
-    db.roles[address] = { address, name, place, role }
+
+    // Initialize address entry if missing or if it's the old format (check if it has 'roles' array)
+    // If it has 'roles' array, we wipe it to start fresh with the new structure or we could try to keep it,
+    // but mixing types is messy. For this prototype, if it's not a plain object of roles, we reset.
+    // However, existing[role] check is safer.
+
+    if (!db.roles[address] || db.roles[address].roles) {
+        db.roles[address] = {}
+    }
+
+    // Store metadata specific to the role
+    db.roles[address][role] = { name, place }
+
     saveDB(db)
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, updated: db.roles[address] })
 }

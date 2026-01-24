@@ -15,7 +15,7 @@ export const ApiService = {
         },
     },
     roles: {
-        getAll: async (): Promise<Record<string, { name: string; place: string }>> => {
+        getAll: async (): Promise<Record<string, Record<string, { name: string; place: string }>>> => {
             const res = await fetch('/api/roles')
             return res.json()
         },
