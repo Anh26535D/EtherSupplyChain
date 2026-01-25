@@ -83,7 +83,8 @@ export default function Track() {
       const rmsData: { [key: number]: Role } = {}
       for (let i = 0; i < counts.rms; i++) {
         const role = await contractService.getRole(contract, 'rms', i + 1)
-        const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
+        const rawMeta = offChainRoles[role.addr] as any
+        const meta = rawMeta?.rms || { name: 'Unknown', place: 'Unknown' }
         rmsData[i + 1] = { ...role, ...meta }
       }
       setRMS(rmsData)
@@ -91,7 +92,8 @@ export default function Track() {
       const manData: { [key: number]: Role } = {}
       for (let i = 0; i < counts.man; i++) {
         const role = await contractService.getRole(contract, 'man', i + 1)
-        const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
+        const rawMeta = offChainRoles[role.addr] as any
+        const meta = rawMeta?.man || { name: 'Unknown', place: 'Unknown' }
         manData[i + 1] = { ...role, ...meta }
       }
       setMAN(manData)
@@ -99,7 +101,8 @@ export default function Track() {
       const disData: { [key: number]: Role } = {}
       for (let i = 0; i < counts.dis; i++) {
         const role = await contractService.getRole(contract, 'dis', i + 1)
-        const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
+        const rawMeta = offChainRoles[role.addr] as any
+        const meta = rawMeta?.dis || { name: 'Unknown', place: 'Unknown' }
         disData[i + 1] = { ...role, ...meta }
       }
       setDIS(disData)
@@ -107,7 +110,8 @@ export default function Track() {
       const retData: { [key: number]: Role } = {}
       for (let i = 0; i < counts.ret; i++) {
         const role = await contractService.getRole(contract, 'ret', i + 1)
-        const meta = offChainRoles[role.addr] || { name: 'Unknown', place: 'Unknown' }
+        const rawMeta = offChainRoles[role.addr] as any
+        const meta = rawMeta?.ret || { name: 'Unknown', place: 'Unknown' }
         retData[i + 1] = { ...role, ...meta }
       }
       setRET(retData)

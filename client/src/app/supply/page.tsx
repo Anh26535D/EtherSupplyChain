@@ -27,21 +27,35 @@ export default function Supply() {
   const [manageId, setManageId] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [disputeReason, setDisputeReason] = useState('')
+  const [myRoles, setMyRoles] = useState({ rms: false, man: false, dis: false, ret: false })
   const [debugMode, setDebugMode] = useState(true)
 
   useEffect(() => {
     loadWeb3()
     loadBlockchainData()
+
+    // Listen for account changes
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts: string[]) => {
+        if (accounts.length > 0) {
+          const newAccount = accounts[0]
+          setCurrentAccount(newAccount)
+          loadBlockchainData(newAccount)
+        }
+      })
+    }
   }, [])
 
   useEffect(() => {
     contractService.setDebugMode(debugMode)
   }, [debugMode])
 
-  const loadBlockchainData = async () => {
+  const loadBlockchainData = async (forcedAccount?: string) => {
     try {
       setLoader(true)
-      const { contract, account } = await getContract()
+      const { contract, account: fetchedAccount } = await getContract()
+      const account = forcedAccount || fetchedAccount
+
       setSupplyChain(contract)
       setCurrentAccount(account)
 
@@ -63,6 +77,22 @@ export default function Supply() {
 
       setMed(medData)
       setMedStage(medStageData)
+
+      // Fetch My Roles
+      const [rmsId, manId, disId, retId] = await Promise.all([
+        contractService.findRawMaterialSupplier(contract, account),
+        contractService.findManufacturer(contract, account),
+        contractService.findDistributor(contract, account),
+        contractService.findRetailer(contract, account)
+      ]);
+
+      setMyRoles({
+        rms: rmsId > 0,
+        man: manId > 0,
+        dis: disId > 0,
+        ret: retId > 0
+      });
+
       setLoader(false)
     } catch (err: any) {
       const errorMessage = err?.message || 'The smart contract is not deployed to the current network'
@@ -261,11 +291,18 @@ export default function Supply() {
       errorMessage = err.message
     } else if (err?.error?.message) {
       errorMessage = err.error.message
+    } else if (typeof err === 'string') {
+      errorMessage = err
     }
 
     if (errorMessage.includes('revert')) {
       const revertMsg = errorMessage.match(/revert (.*)/)
       if (revertMsg && revertMsg[1]) errorMessage = revertMsg[1]
+    }
+
+    // Detect Nonce Error (Localhost Desync)
+    if (errorMessage.includes('Nonce too high') || errorMessage.includes('nonce')) {
+      errorMessage = `METAMASK DESYNC DETECTED:\n\nYour Metamask nonce (${errorMessage}) is out of sync with the local blockchain.\n\nFIX: Open Metamask -> Settings -> Advanced -> Clear Activity Tab Data.`
     }
 
     console.error('Transaction error:', err)
@@ -487,10 +524,12 @@ export default function Supply() {
                     let ActionButton = null;
                     const isSold = item.buyer && item.buyer !== '0x0000000000000000000000000000000000000000';
                     const isPriceSet = item.price && BigInt(item.price) > BigInt(0);
+                    const iAmBuyer = item.buyer && currentAccount && item.buyer.toLowerCase() === currentAccount.toLowerCase();
+                    const iAmSeller = item.seller && currentAccount && item.seller.toLowerCase() === currentAccount.toLowerCase();
 
                     // 1. Pending Confirmation State (Sold but money held in contract)
                     if (isSold) {
-                      if (item.buyer.toLowerCase() === currentAccount.toLowerCase()) {
+                      if (iAmBuyer) {
                         // I am the Buyer -> Show Confirm
                         ActionButton = (
                           <div className="flex flex-col gap-1">
@@ -514,35 +553,42 @@ export default function Supply() {
                       }
                     }
                     // 2. For Sale State (Listed)
-                    else if (isPriceSet && !item.isDisputed) {
+                    else if (isPriceSet && !item.isDisputed && !iAmSeller) {
                       let buyHandler = null;
                       let btnColor = "bg-gray-800 hover:bg-black";
                       let btnText = "Buy";
+                      let canBuy = false;
 
                       if (stage === STAGE.RawMaterialSupply) {
+                        canBuy = myRoles.man; // Only Manufacturer
                         buyHandler = (e: any) => handlerSubmitPurchase(e, item.id.toString(), contractService.findManufacturer, 'Manufacturer');
                         btnColor = "bg-green-600 hover:bg-green-700";
                         btnText = "Buy (Man)";
                       } else if (stage === STAGE.Manufacturing) {
+                        canBuy = myRoles.dis; // Only Distributor
                         buyHandler = (e: any) => handlerSubmitPurchase(e, item.id.toString(), contractService.findDistributor, 'Distributor');
                         btnColor = "bg-purple-600 hover:bg-purple-700";
                         btnText = "Buy (Dis)";
                       } else if (stage === STAGE.Distribution) {
+                        canBuy = myRoles.ret; // Only Retailer
                         buyHandler = (e: any) => handlerSubmitPurchase(e, item.id.toString(), contractService.findRetailer, 'Retailer');
                         btnColor = "bg-orange-600 hover:bg-orange-700";
                         btnText = "Buy (Ret)";
                       } else if (stage === STAGE.Retail) {
+                        canBuy = true; // Anyone (Consumer)
                         buyHandler = (e: any) => handlerSubmitPurchase(e, item.id.toString(), null, 'Consumer');
                         btnColor = "bg-red-600 hover:bg-red-700";
                         btnText = "Buy (Cons)";
                       }
 
-                      if (buyHandler) {
+                      if (buyHandler && canBuy) {
                         ActionButton = (
                           <button onClick={buyHandler} className={`px-3 py-1 text-xs text-white rounded shadow ${btnColor}`}>
                             {btnText}
                           </button>
                         )
+                      } else if (!canBuy) {
+                        ActionButton = <span className="text-[10px] text-gray-400 italic">Role Restricted</span>
                       }
                     }
                     // 3. Unlisted State (Needs Pricing or invalid)
@@ -555,6 +601,8 @@ export default function Supply() {
                           List for Sale
                         </button>
                       )
+                    } else if (stage === STAGE.Ordered) {
+                      ActionButton = <span className="text-xs text-blue-500 italic">Waiting for RMS Supply</span>
                     } else if (item.isDisputed) {
                       ActionButton = <span className="text-xs text-red-600 font-bold bg-red-100 px-2 py-1 rounded">⛔ DISPUTED</span>
                     }
@@ -579,6 +627,13 @@ export default function Supply() {
                         <td className="px-4 py-3 text-sm">{priceEth} <span className="text-xs text-gray-500">ETH</span></td>
                         <td className="px-4 py-3">
                           {ActionButton || <span className="text-xs text-gray-400">-</span>}
+                          {debugMode && (
+                            <div className="text-[10px] text-gray-500 mt-2 p-1 bg-gray-100 rounded font-mono border border-gray-200">
+                              Buyer: {item.buyer ? `${item.buyer.substring(0, 6)}...` : 'None'}<br />
+                              You: {currentAccount ? `${currentAccount.substring(0, 6)}...` : 'None'}<br />
+                              Match: {iAmBuyer ? 'YES' : 'NO'}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     )

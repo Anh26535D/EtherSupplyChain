@@ -43,6 +43,12 @@ async function main() {
         JSON.stringify(deployments, null, 2)
     );
 
+    // Reset off-chain database (db.json) to match fresh blockchain state
+    const dbPath = path.join(__dirname, "../../client/db.json");
+    const emptyDb = { medicines: {}, roles: {} };
+    fs.writeFileSync(dbPath, JSON.stringify(emptyDb, null, 2));
+    console.log(`Reset off-chain database at ${dbPath}`);
+
     const output = `Updated client deployments at ${path.join(deploymentsDir, "deployments.json")}\n`;
     fs.writeSync(1, output);
     process.exit(0);
